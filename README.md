@@ -69,20 +69,6 @@ java -jar target/risk-monitor-backend-1.0.0.jar
 
 Backend is now running on **http://localhost:8081**
 
-### Step 3: Verify Backend is Running
-
-Test the hello endpoint:
-
-```bash
-curl http://localhost:8081/api/risk-indicators/hello
-```
-
-**Expected response:**
-```
-Hello from Risk Monitor Backend!
-```
-
-
 ## Frontend Setup (React + Vite)
 
 ### Step 1: Install Dependencies
@@ -109,224 +95,40 @@ npm run dev
   ➜  press h + enter to show help
 ```
 
-Frontend is now running on **http://localhost:3000**
+Frontend is now running on **http://localhost:3002**
 
 ### Step 3: Open in Browser
 
 Open your browser and navigate to:
 ```
-http://localhost:3000
+http://localhost:3002
 ```
 
-You should see:
-- **Navigation Bar** with "Hello World" and "Risk Indicators" tabs
-- **Hello World Demo** section with a "Test Backend Connection" button
+You should see 5 sample risk indicators are automatically loaded:
 
----
+| Indicator | Current Value | Yellow | Red | Status |
+|-----------|---------------|--------|-----|--------|
+| Employee Turnover Rate | 25 | 50 | 100 | 🟢 GREEN |
+| System Uptime | 98.5% | 95 | 90 | 🟢 GREEN |
+| Budget Overrun | 65% | 80 | 100 | 🟡 YELLOW |
+| Security Incidents | 15 | 10 | 25 | 🔴 RED |
+| Customer Satisfaction | 82/100 | 70 | 50 | 🟢 GREEN |
 
-## Testing the Full Stack
 
-### 1. Test Backend Connection
 
-Click the **"Test Backend Connection"** button on the frontend.
-
-**Expected Result:**
-```
-Backend says: Hello from Risk Monitor Backend!
-```
-
-### 2. Interactive API Testing with Swagger UI
+### Step 4: Test with swagger
 
 Open your browser and navigate to:
 ```
 http://localhost:8081/swagger-ui.html
 ```
 
-### 3. Create a Risk Indicator (via API)
+In the ID fields just write one of these numbers: 1, 2, 3, 4, or 5
 
 ```
-PSK-Elitas/
-├── backend/
-│   ├── src/
-│   │   └── main/
-│   │       ├── java/com/riskmonitor/
-│   │       │   ├── RiskMonitorApplication.java        (Entry Point)
-│   │       │   ├── controller/
-│   │       │   │   └── RiskIndicatorController.java    (Presentation Layer)
-│   │       │   ├── service/
-│   │       │   │   └── RiskIndicatorService.java       (Business Logic Layer)
-│   │       │   ├── repository/
-│   │       │   │   └── RiskIndicatorRepository.java    (Data Access Layer)
-│   │       │   └── model/
-│   │       │       └── RiskIndicator.java              (Entity Model)
-│   │       └── resources/
-│   │           └── application.properties
-│   ├── target/                                         (Build output)
-│   └── pom.xml                                         (Maven configuration)
-├── frontend/
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── HelloWorld.jsx                          (Hello World Component)
-│   │   │   ├── RiskIndicatorList.jsx                   (Risk Indicators Component)
-│   │   │   └── *.css
-│   │   ├── services/
-│   │   │   └── apiService.js                           (API Communication Layer)
-│   │   ├── App.jsx                                     (Main App Component)
-│   │   └── main.jsx                                    (React Entry Point)
-│   ├── index.html                                      (HTML Template)
-│   ├── vite.config.js                                  (Vite Configuration)
-│   ├── package.json
-│   └── node_modules/                                   (Dependencies)
-├── README.md
-├── .gitignore
-└── .git/
+1 = Employee Turnover Rate
+2 = System Uptime
+3 = Budget Overrun
+4 = Security Incidents
+5 = Customer Satisfaction Score
 ```
-
----
-
-## Architecture: 3-Tier Multi-Layer Design
-
-The backend follows a **3-tier architectural pattern**:
-
-| Layer                    | Location                              | Responsibility                                      |
-| ------------------------ | ------------------------------------- | --------------------------------------------------- |
-| **Presentation (Tier 1)** | `controller/RiskIndicatorController` | Handle HTTP requests/responses, route to services  |
-| **Business Logic (Tier 2)** | `service/RiskIndicatorService`        | Business rules, risk calculations, validation      |
-| **Data Access (Tier 3)**   | `repository/RiskIndicatorRepository`  | Database queries, entity persistence (JPA)         |
-
-**Request Flow:**
-```
-HTTP Request
-    ↓
-Controller (RiskIndicatorController) — Parse request
-    ↓
-Service (RiskIndicatorService) — Apply business logic
-    ↓
-Repository (RiskIndicatorRepository) — Query database
-    ↓
-Model (RiskIndicator) — Hibernate/JPA entity
-    ↓
-Database (H2 in-memory)
-```
-
----
-
-## API Endpoints
-
-| Method   | Endpoint                              | Description                  |
-| -------- | ------------------------------------- | ---------------------------- |
-| `GET`    | `/api/risk-indicators/hello`          | Test endpoint (hello world)  |
-| `GET`    | `/api/risk-indicators`                | List all risk indicators     |
-| `GET`    | `/api/risk-indicators/{id}`           | Get risk indicator by ID     |
-| `POST`   | `/api/risk-indicators`                | Create a new risk indicator  |
-| `PUT`    | `/api/risk-indicators/{id}`           | Update a risk indicator      |
-| `DELETE` | `/api/risk-indicators/{id}`           | Delete a risk indicator      |
-
----
-
-## Risk Level Color System
-
-Risk levels are calculated automatically based on current value vs. thresholds:
-
-- 🟢 **GREEN** — Low Risk (value < yellow threshold)
-- 🟡 **YELLOW** — Medium Risk (yellow threshold ≤ value < red threshold)
-- 🔴 **RED** — High Risk (value ≥ red threshold)
-
-**Example:**
-```
-Risk Indicator: "Population Density"
-yellowThreshold: 500 people/km²
-redThreshold: 5000 people/km²
-
-currentValue: 50 → GREEN ✅
-currentValue: 750 → YELLOW ⚠️
-currentValue: 6000 → RED 🚨
-```
-
----
-
-## Technologies Used
-
-### Backend (Java/Spring Boot)
-- **Framework**: Spring Boot 3.1.5
-- **Language**: Java 17
-- **Database**: H2 (in-memory, no setup needed)
-- **ORM**: Hibernate/JPA
-- **Build Tool**: Maven
-- **REST**: Spring Web MVC
-- **API Documentation**: SpringDoc OpenAPI / Swagger UI
-
-### Frontend (JavaScript/React)
-- **Framework**: React 18.2.0
-- **Build Tool**: Vite 5.0.0
-- **HTTP Client**: Axios
-- **Styling**: CSS3
-- **Runtime**: Node.js
-
----
-
-
-
-## Development Workflow
-
-### Making Changes
-
-**Backend:** Edit Java files in `backend/src/main/java/com/riskmonitor/`, then rebuild:
-```bash
-mvn clean package -DskipTests
-java -jar target/risk-monitor-backend-1.0.0.jar
-```
-
-**Frontend:** Edit React files in `frontend/src/`. Vite hot-reloads automatically!
-
-### Debugging
-
-**Backend** — Check logs in terminal running `java -jar`
-
-**Frontend** — Open browser DevTools (F12) → Console tab for errors
-
----
-
-## Key Code References
-
-| Feature                    | File                                      | Lines |
-| -------------------------- | ----------------------------------------- | ----- |
-| Hello World Endpoint       | `controller/RiskIndicatorController.java` | 18-20 |
-| Risk Level Calculation     | `model/RiskIndicator.java`                | 48-50 |
-| Service Business Logic     | `service/RiskIndicatorService.java`       | 15-48 |
-| Database Access (JPA)      | `repository/RiskIndicatorRepository.java` | 1-8   |
-| React Hello Component      | `frontend/src/components/HelloWorld.jsx`  | 1-60  |
-| API Service (Frontend)     | `frontend/src/services/apiService.js`     | 1-60  |
-
----
-
-## Next Steps
-
-1. ✅ Understand the 3-tier architecture in action
-2. ✅ Create and manage risk indicators via API (using Swagger UI)
-3. ✅ Monitor risk levels in the UI
-4. 🔄 Add charts for risk trends (future enhancement)
-5. 🔄 Add authentication and user roles (future enhancement)
-6. 🔄 Deploy to production (future enhancement)
-
----
-
-## Resources
-
-- [Spring Boot Documentation](https://spring.io/projects/spring-boot)
-- [SpringDoc OpenAPI / Swagger UI](https://springdoc.org/)
-- [React Documentation](https://react.dev)
-- [Vite Documentation](https://vitejs.dev)
-- [Axios Documentation](https://axios-http.com)
-- [Maven Documentation](https://maven.apache.org/guides/)
-
----
-
-## License
-
-This project is part of VU University course PSK-Elitas (2026).
-
-## Authors
-
-- Development Team
-- VU University, 3k2s Semester
