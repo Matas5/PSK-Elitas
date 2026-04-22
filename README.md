@@ -1,4 +1,4 @@
-# Risk Monitor System — 3-Tier Architecture Workshop
+# Risk Monitor System — 3-Tier Architecture
 
 A hands-on, educational REST API for monitoring organizational risk indicators. This project demonstrates a **production-grade 3-tier multi-layer architecture** built with **Spring Boot** (Java backend) and **React** (JavaScript frontend).
 
