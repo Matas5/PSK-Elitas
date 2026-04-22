@@ -44,8 +44,4 @@ public class RiskIndicatorService {
     public void deleteRiskIndicator(Long id) {
         riskIndicatorRepository.deleteById(id);
     }
-
-    public String getHelloMessage() {
-        return "Hello from Risk Monitor Backend!";
-    }
 }

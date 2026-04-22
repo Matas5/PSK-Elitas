@@ -3,16 +3,6 @@ import axios from 'axios';
 const API_BASE_URL = '/api/risk-indicators';
 
 const apiService = {
-  getHelloMessage: async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/hello`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching hello message:', error);
-      throw error;
-    }
-  },
-
   getAllRiskIndicators: async () => {
     try {
       const response = await axios.get(API_BASE_URL);

@@ -2,6 +2,10 @@ package com.riskmonitor.controller;
 
 import com.riskmonitor.model.RiskIndicator;
 import com.riskmonitor.service.RiskIndicatorService;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,11 +21,6 @@ public class RiskIndicatorController {
     @Autowired
     private RiskIndicatorService riskIndicatorService;
 
-    @GetMapping("/hello")
-    public ResponseEntity<String> sayHello() {
-        return ResponseEntity.ok(riskIndicatorService.getHelloMessage());
-    }
-
     @GetMapping
     public ResponseEntity<List<RiskIndicator>> getAllRiskIndicators() {
         List<RiskIndicator> indicators = riskIndicatorService.getAllRiskIndicators();
@@ -35,14 +34,26 @@ public class RiskIndicatorController {
     }
 
     @PostMapping
-    public ResponseEntity<RiskIndicator> createRiskIndicator(@RequestBody RiskIndicator riskIndicator) {
+    @RequestBody(description = "Risk Indicator to create", 
+                 content = @Content(mediaType = "application/json",
+                                   examples = @ExampleObject(
+                                       name = "Create New Risk Indicator",
+                                       value = "{\"name\": \"Data Breach Risk\", \"description\": \"Failed authentication attempts\", \"currentValue\": 3, \"yellowThreshold\": 5, \"redThreshold\": 10}"
+                                   )))
+    public ResponseEntity<RiskIndicator> createRiskIndicator(@Valid @org.springframework.web.bind.annotation.RequestBody RiskIndicator riskIndicator) {
         RiskIndicator createdIndicator = riskIndicatorService.createRiskIndicator(riskIndicator);
         return ResponseEntity.ok(createdIndicator);
     }
 
     @PutMapping("/{id}")
+    @RequestBody(description = "Updated Risk Indicator data", 
+                 content = @Content(mediaType = "application/json",
+                                   examples = @ExampleObject(
+                                       name = "Update Risk Indicator",
+                                       value = "{\"name\": \"Data Breach Risk\", \"description\": \"Failed authentication attempts\", \"currentValue\": 8, \"yellowThreshold\": 5, \"redThreshold\": 10}"
+                                   )))
     public ResponseEntity<RiskIndicator> updateRiskIndicator(@PathVariable Long id, 
-                                                               @RequestBody RiskIndicator riskIndicatorDetails) {
+                                                               @Valid @org.springframework.web.bind.annotation.RequestBody RiskIndicator riskIndicatorDetails) {
         RiskIndicator updatedIndicator = riskIndicatorService.updateRiskIndicator(id, riskIndicatorDetails);
         if (updatedIndicator != null) {
             return ResponseEntity.ok(updatedIndicator);

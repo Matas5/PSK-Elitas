@@ -1,6 +1,9 @@
 package com.riskmonitor.model;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.PositiveOrZero;
 
 @Entity
 @Table(name = "risk_indicators")
@@ -11,18 +14,25 @@ public class RiskIndicator {
     private Long id;
 
     @Column(nullable = false)
+    @NotBlank(message = "Risk indicator name is required")
     private String name;
 
     @Column(length = 500)
     private String description;
 
     @Column(nullable = false)
+    @NotNull(message = "Current value is required")
+    @PositiveOrZero(message = "Current value must be positive or zero")
     private Double currentValue;
 
     @Column(nullable = false)
+    @NotNull(message = "Yellow threshold is required")
+    @PositiveOrZero(message = "Yellow threshold must be positive or zero")
     private Double yellowThreshold;
 
     @Column(nullable = false)
+    @NotNull(message = "Red threshold is required")
+    @PositiveOrZero(message = "Red threshold must be positive or zero")
     private Double redThreshold;
 
     @Enumerated(EnumType.STRING)
@@ -42,6 +52,9 @@ public class RiskIndicator {
     }
 
     public RiskLevel calculateRiskLevel() {
+        if (currentValue == null || redThreshold == null || yellowThreshold == null) {
+            return RiskLevel.GREEN;
+        }
         if (currentValue >= redThreshold) {
             return RiskLevel.RED;
         } else if (currentValue >= yellowThreshold) {
