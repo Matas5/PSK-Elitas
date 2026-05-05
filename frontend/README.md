@@ -1,16 +1,158 @@
-# React + Vite
+# Frontend Packages
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This frontend uses **React** with **Vite**.
 
-Currently, two official plugins are available:
+## Important files
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+### `package.json`
 
-## React Compiler
+Defines the frontend project.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+Contains:
 
-## Expanding the ESLint configuration
+- project scripts
+- dependencies
+- dev dependencies
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Common scripts:
+
+```bash
+npm run dev
+npm run build
+npm run preview
+```
+
+Do not delete this file.
+
+---
+
+### `package-lock.json`
+
+Locks exact package versions.
+
+This helps all team members install the same versions.
+
+Commit this file to GitHub.
+
+Do not edit it manually.
+
+---
+
+### `node_modules`
+
+Contains installed packages.
+
+Created automatically with:
+
+```bash
+npm install
+```
+
+Do not edit it manually.
+
+Do not commit it to GitHub.
+
+---
+
+## Dependencies
+
+### `dependencies`
+
+Packages needed by the app.
+
+Examples:
+
+```text
+react
+react-dom
+```
+
+Later we may add:
+
+```text
+axios
+react-router-dom
+```
+
+### `devDependencies`
+
+Packages needed only for development/building.
+
+Examples:
+
+```text
+vite
+@vitejs/plugin-react
+eslint
+```
+
+---
+
+## Useful commands
+
+Install packages:
+
+```bash
+npm install
+```
+
+Start frontend:
+
+```bash
+npm run dev
+```
+
+Build frontend:
+
+```bash
+npm run build
+```
+
+Preview build:
+
+```bash
+npm run preview
+```
+
+---
+
+## GitHub rules
+
+Commit:
+
+```text
+package.json
+package-lock.json
+```
+
+Do not commit:
+
+```text
+node_modules/
+dist/
+.env
+```
+
+Recommended `.gitignore`:
+
+```gitignore
+node_modules
+dist
+.env
+```
+
+---
+
+## Local URLs
+
+Frontend:
+
+```text
+http://localhost:5173
+```
+
+Backend:
+
+```text
+http://localhost:8080
+```

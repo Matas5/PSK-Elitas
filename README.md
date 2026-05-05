@@ -1,106 +1,182 @@
-## Backend Package Structure
+# PSK-Elitas Project Setup Guide
 
-The backend source code is organized into separate packages so that each part of the application has a clear responsibility.
+This guide explains how to start the project on a local computer.
 
-### `config`
+The project uses:
 
-Used for application configuration classes.
-
-Examples:
-- CORS configuration
-- security configuration
-- Swagger/OpenAPI configuration
-- custom Spring beans
+- Spring Boot for the backend
+- React for the frontend
+- PostgreSQL for the database
+- Docker Compose to run PostgreSQL automatically
 
 ---
 
-### `controller`
+## 1. Required Software
 
-Used for REST API endpoints.
+Before starting, install these tools:
 
-Controllers receive HTTP requests from the frontend and return HTTP responses.
-
-Examples:
-- `GET /api/health`
-- `POST /api/risks`
-- `GET /api/risks`
-
-Controllers should stay simple and should not contain heavy business logic.
-
+- Git
+- IntelliJ IDEA
+- Java 17
+- Node.js and npm
+- Docker Desktop
 ---
 
-### `service`
+## 2. Clone the Repository and Branch Workflow
 
-Used for business logic.
-
-Services decide what should happen inside the system.
-
-Examples:
-- creating a risk
-- validating risk thresholds
-- calculating if a risk level is green, yellow, or red
-- preparing data for graphs
-
----
-
-### `repository`
-
-Used for database access.
-
-Repositories communicate with PostgreSQL through Spring Data JPA.
-
-Examples:
-- saving a risk
-- finding a risk by ID
-- listing all risks
-- deleting a risk
-
----
-
-### `entity`
-
-Used for database models.
-
-Entities are Java classes that represent database tables.
+Open a terminal and choose where you want to store the project.
 
 Example:
-- `Risk` entity represents a `risk` table in PostgreSQL
+
+cd ~/Desktop
+
+Clone the repository:
+
+git clone https://github.com/Matas5/PSK-Elitas.git
+
+Go into the project folder:
+
+cd PSK-Elitas
+
+Switch to the development branch:
+
+git checkout Dev
+
+Pull the newest version of Dev:
+
+git pull origin Dev
 
 ---
 
-### `dto`
+Development workflow:
 
-Used for Data Transfer Objects.
+We do not work directly on main.
 
-DTOs define what data is sent between the frontend and backend.
+The main branch is treated as the production/stable branch.
+
+During development, we work from the Dev branch. For each Jira work item, create a separate feature branch from Dev.
+
+Feature branch naming structure:
+
+feature/007-BE-implemented-x-functionality
+
+Where:
+
+007 = Jira work item number
+BE = backend task
+FE = frontend task
+implemented-x-functionality = short description of the work
 
 Examples:
-- `CreateRiskRequest` contains data needed when creating a risk
-- `RiskResponse` contains data returned to the frontend
-- `UpdateRiskRequest` contains data needed when editing a risk
 
-DTOs help avoid exposing database entities directly to the frontend.
+feature/007-BE-implemented-health-endpoint
+feature/012-FE-created-risk-form
+feature/018-BE-added-risk-repository
+
+To create a feature branch, first make sure you are on Dev:
+
+git checkout Dev
+git pull origin Dev
+
+Then create your feature branch:
+
+git checkout -b feature/007-BE-implemented-x-functionality
+
+After finishing your work, push the feature branch:
+
+git push -u origin feature/007-BE-implemented-x-functionality
+
+Then create a Pull Request from your feature branch into Dev.
+
+At the end of the sprint, Dev is merged into main.
 
 ---
 
-### `exception`
+## 3. Project Structure
 
-Used for custom errors and error handling.
+The project is organized like this:
 
-Examples:
-- `RiskNotFoundException`
-- validation error responses
-- global exception handling
+PSK-Elitas/
+├── backend/
+│   └── Spring Boot backend application
+├── frontend/
+│   └── React frontend application
+├── docker-compose.yml
+│   └── PostgreSQL database setup
+└── README.md
+    └── Project instructions
 
-This package helps the backend return clear error messages to the frontend.
+---
 
+## 4. Running the project
 
+### Recommended Development Setup
 
+For development, we recommend running only PostgreSQL with Docker and running the backend/frontend normally.
 
-After starting the backend, open:
+PostgreSQL Docker configuration:
+
+Database: risk_monitor
+User: risk_user
+Password: risk_password
+Port: 5432
+
+Start PostgreSQL from the project root:
+
+docker compose up -d
+
+Start the backend:
+
+- IntelliJ IDEA: run the main Spring Boot application class
+- VS Code / terminal:
+
+cd backend
+./mvnw spring-boot:run
+
+On Windows:
+
+cd backend
+mvnw.cmd spring-boot:run
+
+Start the frontend in another terminal:
+
+cd frontend
+npm install
+npm run dev
+
+Frontend URL:
+
+http://localhost:5173
+
+Backend health check:
 
 http://localhost:8080/api/health
 
 Expected response:
 
 OK
+
+---
+
+### Optional Full Docker Setup
+
+If Dockerfiles for backend and frontend are added, the whole project can be started with one command:
+
+docker compose up --build
+
+This starts:
+
+- PostgreSQL
+- Spring Boot backend
+- React frontend
+
+PostgreSQL Docker configuration:
+
+Database: risk_monitor
+User: risk_user
+Password: risk_password
+Port: 5432
+
+Stop everything:
+
+docker compose down
