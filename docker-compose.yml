@@ -1,0 +1,43 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: risk-monitor-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: risk_monitor
+      POSTGRES_USER: dev_user
+      POSTGRES_PASSWORD: dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    container_name: risk-monitor-backend
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/risk_monitor
+      SPRING_DATASOURCE_USERNAME: dev_user
+      SPRING_DATASOURCE_PASSWORD: dev_password
+      SERVER_PORT: 8081
+    ports:
+      - "8081:8081"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: risk-monitor-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:8081
+    ports:
+      - "5173:5173"
+
+volumes:
+  postgres_data:
