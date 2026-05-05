@@ -6,7 +6,7 @@ COPY . .
 
 RUN ./mvnw clean package -DskipTests
 
-EXPOSE 8080
+EXPOSE 8081
 
 CMD ["java", "-jar", "target/risk-monitor-backend-0.0.1-SNAPSHOT.jar"]
 

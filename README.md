@@ -150,7 +150,7 @@ http://localhost:5173
 
 Backend health check:
 
-http://localhost:8080/api/health
+http://localhost:8081/api/health
 
 Expected response:
 
@@ -169,6 +169,8 @@ This starts:
 - PostgreSQL
 - Spring Boot backend
 - React frontend
+
+The frontend container proxies `/api` requests to `http://backend:8081` inside the Docker network.
 
 PostgreSQL Docker configuration:
 
