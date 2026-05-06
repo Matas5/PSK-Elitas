@@ -1,59 +1,71 @@
-import { useEffect, useState } from "react";
-import { getHealthStatus } from "./api/healthApi";
-import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import Login from "./components/Login"; // Import the Login component
+import { Navigate, Route, Routes } from 'react-router-dom';
+import Box from '@mui/material/Box';
+import Toolbar from '@mui/material/Toolbar';
 
-function App() {
-  const [status, setStatus] = useState("Loading...");
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+import Navbar from './components/Navbar';
+import RequireAuth from './auth/RequireAuth';
+import { useAuth } from './auth/AuthContext';
+import { layout } from './theme';
 
-  useEffect(() => {
-    getHealthStatus()
-      .then((data) => setStatus(data))
-      .catch(() => setStatus("Backend not reachable"));
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Reports from './pages/Reports';
+import Profile from './pages/Profile';
 
-    // Check if user is logged in
-    const authUrl = import.meta.env.VITE_AUTH_URL || "http://localhost:3000";
-    fetch(`${authUrl}/user`, { credentials: "include" })
-      .then((res) => res.json())
-      .then((data) => {
-        setUser(data.user);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  if (loading) {
-    return <p>Loading...</p>;
-  }
-
+function AuthedShell({ children }) {
   return (
-    <main style={{ padding: "2rem", fontFamily: "Arial" }}>
-      <h1>Risk Monitor</h1>
-      <p>Backend status: {status}</p>
-
-      {user ? (
-        <div>
-          <p>Welcome, {user.displayName}! ({user.email})</p>
-          <a
-            href={`${import.meta.env.VITE_AUTH_URL || "http://localhost:3000"}/logout`}
-            style={{ padding: "10px 20px", backgroundColor: "#ff6b6b", color: "white", textDecoration: "none", borderRadius: "4px" }}
-          >
-            Logout
-          </a>
-        </div>
-      ) : (
-        <Router>
-          <Routes>
-            <Route path="/" element={<Login />} />{" "}
-            {/* Route for the Login page */}
-          </Routes>
-        </Router>
-      )}
-    </main>
+    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+      <Navbar />
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          width: { xs: '100%', md: `calc(100% - ${layout.sidebarWidth}px)` },
+          p: { xs: 2, md: 4 },
+        }}
+      >
+        <Toolbar sx={{ display: { xs: 'block', md: 'none' } }} />
+        {children}
+      </Box>
+    </Box>
   );
 }
 
-export default App;
+function HomeRedirect() {
+  const { isAuthenticated } = useAuth();
+  return <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />;
+}
+
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/dashboard"
+        element={(
+          <RequireAuth>
+            <AuthedShell><Dashboard /></AuthedShell>
+          </RequireAuth>
+        )}
+      />
+      <Route
+        path="/reports"
+        element={(
+          <RequireAuth>
+            <AuthedShell><Reports /></AuthedShell>
+          </RequireAuth>
+        )}
+      />
+      <Route
+        path="/profile"
+        element={(
+          <RequireAuth>
+            <AuthedShell><Profile /></AuthedShell>
+          </RequireAuth>
+        )}
+      />
+      <Route path="/" element={<HomeRedirect />} />
+      <Route path="*" element={<HomeRedirect />} />
+    </Routes>
+  );
+}
