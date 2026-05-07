@@ -24,11 +24,12 @@ import MenuIcon from '@mui/icons-material/Menu';
 
 import { useAuth } from '../auth/AuthContext';
 import { layout } from '../theme';
+import { ROUTES } from '../routes';
 
 const NAV_ITEMS = [
-  { to: '/dashboard', label: 'Dashboard', icon: <DashboardOutlinedIcon /> },
-  { to: '/reports', label: 'Reports', icon: <AssessmentOutlinedIcon /> },
-  { to: '/profile', label: 'Profile', icon: <PersonOutlineOutlinedIcon /> },
+  { to: ROUTES.DASHBOARD, label: 'Dashboard', icon: <DashboardOutlinedIcon /> },
+  { to: ROUTES.REPORTS, label: 'Reports', icon: <AssessmentOutlinedIcon /> },
+  { to: ROUTES.PROFILE, label: 'Profile', icon: <PersonOutlineOutlinedIcon /> },
 ];
 
 function NavListItem({ to, label, icon, onNavigate }) {
@@ -130,7 +131,7 @@ export default function Navbar() {
   const handleLogout = () => {
     logout();
     setMobileOpen(false);
-    navigate('/login', { replace: true });
+    navigate(ROUTES.LOGIN, { replace: true });
   };
 
   const handleMobileNavigate = () => setMobileOpen(false);
