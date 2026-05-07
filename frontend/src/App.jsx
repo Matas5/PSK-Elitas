@@ -7,11 +7,9 @@ import Notification from './components/Notification';
 import RequireAuth from './auth/RequireAuth';
 import { useAuth } from './auth/AuthContext';
 import { layout } from './theme';
+import { ROUTES } from './routes';
 
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
-import Reports from './pages/Reports';
-import Profile from './pages/Profile';
+import { Dashboard, Login, Profile, Reports } from './pages';
 
 function AuthedShell({ children }) {
   return (
