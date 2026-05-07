@@ -7,12 +7,13 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import { useAuth } from '../auth/AuthContext';
+import { ROUTES } from '../routes';
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const redirectTo = location.state?.from?.pathname ?? '/dashboard';
+  const redirectTo = location.state?.from?.pathname ?? ROUTES.DASHBOARD;
 
   const handleDemoLogin = () => {
     login({ username: 'demo' });
