@@ -16,10 +16,15 @@ passport.use(
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: "http://localhost:3000/auth/callback",
+      callbackURL: process.env.GOOGLE_CALLBACK_URL || "http://localhost:3000/auth/callback",
     },
     (accessToken, refreshToken, profile, done) => {
       // This function runs after a user logs in with Google.
+      console.log("[Passport] User authenticated:", {
+        id: profile.id,
+        email: profile.emails?.[0]?.value,
+        name: profile.displayName
+      });
       
       let user = users.find((user) => user.googleId === profile.id);
       // Check if we already have this user in our list by their Google ID.
