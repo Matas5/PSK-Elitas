@@ -12,6 +12,22 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  authserver:
+    build:
+      context: .
+      dockerfile: Dockerfile.auth
+    container_name: risk-monitor-authserver
+    restart: unless-stopped
+    environment:
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      GOOGLE_CALLBACK_URL: http://localhost:3000/auth/callback
+      SESSION_SECRET: ${SESSION_SECRET}
+      CORS_ORIGIN: http://localhost:5173
+      AUTH_PORT: 3000
+    ports:
+      - "3000:3000"
+
   backend:
     build:
       context: ./backend
@@ -34,8 +50,10 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+      - authserver
     environment:
       VITE_API_PROXY_TARGET: http://backend:8081
+      VITE_AUTH_URL: http://localhost:3000
     ports:
       - "5173:5173"
 
