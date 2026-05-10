@@ -32,7 +32,9 @@ function AuthedShell({ children }) {
 }
 
 function HomeRedirect() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  // While auth is initializing, don't redirect — allow AuthProvider to determine state
+  if (loading) return null;
   return <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />;
 }
 

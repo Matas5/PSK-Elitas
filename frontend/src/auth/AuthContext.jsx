@@ -15,6 +15,30 @@ function readStoredUser() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
+  const [loading, setLoading] = useState(true);
+
+  // Fetch user data from auth server on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const authUrl = import.meta.env.VITE_AUTH_URL || "http://localhost:3000";
+        const response = await fetch(`${authUrl}/user`, { credentials: "include" });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.user) {
+            setUser(data.user);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   useEffect(() => {
     if (user) {
@@ -28,8 +52,8 @@ export function AuthProvider({ children }) {
   const logout = useCallback(() => setUser(null), []);
 
   const value = useMemo(
-    () => ({ user, login, logout, isAuthenticated: Boolean(user) }),
-    [user, login, logout],
+    () => ({ user, login, logout, isAuthenticated: Boolean(user), loading }),
+    [user, login, logout, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

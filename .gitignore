@@ -26,3 +26,5 @@ npm-debug.log*
 # Build outputs
 /frontend/dist/
 /backend/build/
+.env
+.env

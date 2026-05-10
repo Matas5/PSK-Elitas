@@ -103,7 +103,7 @@ function DrawerContent({ user, onLogout, onNavigate }) {
           variant="caption"
           sx={{ display: 'block', color: 'rgba(255,255,255,0.6)', mb: 1 }}
         >
-          Signed in as <strong>{user?.username}</strong>
+          Signed in as <strong>{user?.displayName || user?.username || 'User'}</strong>
         </Typography>
         <Button
           fullWidth
@@ -131,7 +131,10 @@ export default function Navbar() {
   const handleLogout = () => {
     logout();
     setMobileOpen(false);
-    navigate(ROUTES.LOGIN, { replace: true });
+    
+    // Redirect to auth server logout endpoint
+    const authUrl = import.meta.env.VITE_AUTH_URL || "http://localhost:3000";
+    window.location.href = `${authUrl}/logout`;
   };
 
   const handleMobileNavigate = () => setMobileOpen(false);
