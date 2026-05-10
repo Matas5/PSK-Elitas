@@ -6,9 +6,11 @@ import Navbar from './components/Navbar';
 import RequireAuth from './auth/RequireAuth';
 import { useAuth } from './auth/AuthContext';
 import { layout } from './theme';
-import { ROUTES } from './routes';
 
-import { Dashboard, Login, Profile, Reports } from './pages';
+import Login from './pages/Login';
+import Dashboard from './pages/Dashboard';
+import Reports from './pages/Reports';
+import Profile from './pages/Profile';
 
 function AuthedShell({ children }) {
   return (
@@ -31,15 +33,15 @@ function AuthedShell({ children }) {
 
 function HomeRedirect() {
   const { isAuthenticated } = useAuth();
-  return <Navigate to={isAuthenticated ? ROUTES.DASHBOARD : ROUTES.LOGIN} replace />;
+  return <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />;
 }
 
 export default function App() {
   return (
     <Routes>
-      <Route path={ROUTES.LOGIN} element={<Login />} />
+      <Route path="/login" element={<Login />} />
       <Route
-        path={ROUTES.DASHBOARD}
+        path="/dashboard"
         element={(
           <RequireAuth>
             <AuthedShell><Dashboard /></AuthedShell>
@@ -47,7 +49,7 @@ export default function App() {
         )}
       />
       <Route
-        path={ROUTES.REPORTS}
+        path="/reports"
         element={(
           <RequireAuth>
             <AuthedShell><Reports /></AuthedShell>
@@ -55,14 +57,14 @@ export default function App() {
         )}
       />
       <Route
-        path={ROUTES.PROFILE}
+        path="/profile"
         element={(
           <RequireAuth>
             <AuthedShell><Profile /></AuthedShell>
           </RequireAuth>
         )}
       />
-      <Route path={ROUTES.HOME} element={<HomeRedirect />} />
+      <Route path="/" element={<HomeRedirect />} />
       <Route path="*" element={<HomeRedirect />} />
     </Routes>
   );
