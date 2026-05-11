@@ -3,6 +3,7 @@ import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 
 import Navbar from './components/Navbar';
+import Notification from './components/Notification';
 import RequireAuth from './auth/RequireAuth';
 import { useAuth } from './auth/AuthContext';
 import { layout } from './theme';
@@ -40,34 +41,37 @@ function HomeRedirect() {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
-      <Route
-        path="/dashboard"
-        element={(
-          <RequireAuth>
-            <AuthedShell><Dashboard /></AuthedShell>
-          </RequireAuth>
-        )}
-      />
-      <Route
-        path="/reports"
-        element={(
-          <RequireAuth>
-            <AuthedShell><Reports /></AuthedShell>
-          </RequireAuth>
-        )}
-      />
-      <Route
-        path="/profile"
-        element={(
-          <RequireAuth>
-            <AuthedShell><Profile /></AuthedShell>
-          </RequireAuth>
-        )}
-      />
-      <Route path="/" element={<HomeRedirect />} />
-      <Route path="*" element={<HomeRedirect />} />
-    </Routes>
+    <>
+      <Notification />
+      <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route
+          path="/dashboard"
+          element={(
+            <RequireAuth>
+              <AuthedShell><Dashboard /></AuthedShell>
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/reports"
+          element={(
+            <RequireAuth>
+              <AuthedShell><Reports /></AuthedShell>
+            </RequireAuth>
+          )}
+        />
+        <Route
+          path="/profile"
+          element={(
+            <RequireAuth>
+              <AuthedShell><Profile /></AuthedShell>
+            </RequireAuth>
+          )}
+        />
+        <Route path="/" element={<HomeRedirect />} />
+        <Route path="*" element={<HomeRedirect />} />
+      </Routes>
+    </>
   );
 }

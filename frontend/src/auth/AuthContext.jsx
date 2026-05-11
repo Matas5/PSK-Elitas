@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useMemo, useState } from 'react';
 
 const STORAGE_KEY = 'auth_user';
 
@@ -16,6 +16,8 @@ function readStoredUser() {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
   const [loading, setLoading] = useState(true);
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+  const prevUserRef = useRef(user);
 
   // Fetch user data from auth server on mount
   useEffect(() => {
@@ -40,6 +42,14 @@ export function AuthProvider({ children }) {
     fetchUser();
   }, []);
 
+  // Detect when user logs in (transitions from null/falsy to truthy)
+  useEffect(() => {
+    if (!prevUserRef.current && user) {
+      setJustLoggedIn(true);
+    }
+    prevUserRef.current = user;
+  }, [user]);
+
   useEffect(() => {
     if (user) {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
@@ -50,10 +60,11 @@ export function AuthProvider({ children }) {
 
   const login = useCallback((nextUser) => setUser(nextUser), []);
   const logout = useCallback(() => setUser(null), []);
+  const clearJustLoggedIn = useCallback(() => setJustLoggedIn(false), []);
 
   const value = useMemo(
-    () => ({ user, login, logout, isAuthenticated: Boolean(user), loading }),
-    [user, login, logout, loading],
+    () => ({ user, login, logout, isAuthenticated: Boolean(user), loading, justLoggedIn, clearJustLoggedIn }),
+    [user, login, logout, loading, justLoggedIn, clearJustLoggedIn],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
