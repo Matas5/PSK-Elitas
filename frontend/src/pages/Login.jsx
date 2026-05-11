@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext';
+import { ROUTES } from '../routes';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -17,7 +18,7 @@ export default function Login() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      navigate('/dashboard', { replace: true });
+      navigate(ROUTES.DASHBOARD, { replace: true });
     }
   }, [loading, isAuthenticated, navigate]);
 

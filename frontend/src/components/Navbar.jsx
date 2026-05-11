@@ -149,7 +149,7 @@ export default function Navbar() {
     
     // Navigate to login after a brief delay to show notification
     setTimeout(() => {
-      navigate('/login', { replace: true });
+      navigate(ROUTES.LOGIN, { replace: true });
     }, 500);
   };
 
