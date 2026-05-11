@@ -8,7 +8,6 @@ import RequireAuth from './auth/RequireAuth';
 import { useAuth } from './auth/AuthContext';
 import { layout } from './theme';
 import { ROUTES } from './routes';
-import { ROUTES } from './routes';
 
 import { Dashboard, Login, Profile, Reports } from './pages';
 
