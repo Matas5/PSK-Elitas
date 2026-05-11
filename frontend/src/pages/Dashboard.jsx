@@ -15,7 +15,7 @@ export default function Dashboard() {
       showNotification('Login successful!', 'success', 4000);
       clearJustLoggedIn();
     }
-  }, [justLoggedIn]); // Only depend on justLoggedIn
+  }, [justLoggedIn]);
 
   return (
     <Box>

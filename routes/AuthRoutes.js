@@ -1,13 +1,8 @@
 import express from "express"; 
-// Importing Express, a web framework for handling HTTP requests.
-
 import passport from "../config/passport.js"; 
-// Importing the configured Passport instance for authentication.
 
 const router = express.Router(); 
-// Creating a new router instance to handle specific routes.
 
-// Google OAuth Routes
 router.get(
   "/google",
   (req, res, next) => {
@@ -17,8 +12,6 @@ router.get(
     next();
   },
   passport.authenticate("google", { scope: ["profile", "email"] })
-  // Starts the Google login process using Passport.
-  // The 'scope' specifies the data we want access to (profile info and email).
 );
 
 router.get(
@@ -32,22 +25,15 @@ router.get(
     failureRedirect: "/auth/error",
     failureMessage: true 
   }),
-  // Handles the response after the user logs in via Google.
-  // If authentication fails, the user is redirected to '/auth/error'.
-
   (req, res) => {
     console.log("[OAuth] Authentication successful for user:", req.user?.email);
-    // Get the first frontend URL from CORS_ORIGIN (comma-separated)
     const corsOrigins = (process.env.CORS_ORIGIN || "http://localhost:5173").split(",");
     const primaryOrigin = corsOrigins[0].trim();
     console.log("[OAuth] Redirecting to:", primaryOrigin);
     res.redirect(`${primaryOrigin}`);
-    // If authentication succeeds, redirect the user to the front-end app 
-    // using the primary URL.
   }
 );
 
-// Error handler for OAuth failures
 router.get("/error", (req, res) => {
   console.log("[OAuth] Error route hit. Message:", req.session?.messages);
   res.status(401).json({ 
@@ -57,4 +43,3 @@ router.get("/error", (req, res) => {
 });
 
 export default router; 
-// Exporting this router to use in the main app file for mounting routes.
