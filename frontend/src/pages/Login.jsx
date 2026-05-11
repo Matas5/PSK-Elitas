@@ -8,6 +8,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
+import GoogleIcon from '@mui/icons-material/Google';
 
 export default function Login() {
   const authUrl = import.meta.env.VITE_AUTH_URL;
@@ -55,7 +56,13 @@ export default function Login() {
             <Button
               fullWidth
               variant="contained"
+              startIcon={<GoogleIcon />}
               href={`${authUrl}/auth/google`}
+              sx={{
+                textTransform: 'none',
+                fontSize: '1rem',
+                fontWeight: 500,
+              }}
             >
               Sign in with Google
             </Button>
