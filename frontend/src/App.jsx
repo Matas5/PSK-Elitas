@@ -8,6 +8,7 @@ import RequireAuth from './auth/RequireAuth';
 import { useAuth } from './auth/AuthContext';
 import { layout } from './theme';
 import { ROUTES } from './routes';
+import { ROUTES } from './routes';
 
 import { Dashboard, Login, Profile, Reports } from './pages';
 
@@ -34,7 +35,7 @@ function HomeRedirect() {
   const { isAuthenticated, loading } = useAuth();
   // While auth is initializing, don't redirect — allow AuthProvider to determine state
   if (loading) return null;
-  return <Navigate to={isAuthenticated ? '/dashboard' : '/login'} replace />;
+  return <Navigate to={isAuthenticated ? ROUTES.DASHBOARD : ROUTES.LOGIN} replace />;
 }
 
 export default function App() {
@@ -42,9 +43,9 @@ export default function App() {
     <>
       <Notification />
       <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path={ROUTES.LOGIN} element={<Login />} />
         <Route
-          path="/dashboard"
+          path={ROUTES.DASHBOARD}
           element={(
             <RequireAuth>
               <AuthedShell><Dashboard /></AuthedShell>
@@ -52,7 +53,7 @@ export default function App() {
           )}
         />
         <Route
-          path="/reports"
+          path={ROUTES.REPORTS}
           element={(
             <RequireAuth>
               <AuthedShell><Reports /></AuthedShell>
@@ -60,14 +61,14 @@ export default function App() {
           )}
         />
         <Route
-          path="/profile"
+          path={ROUTES.PROFILE}
           element={(
             <RequireAuth>
               <AuthedShell><Profile /></AuthedShell>
             </RequireAuth>
           )}
         />
-        <Route path="/" element={<HomeRedirect />} />
+        <Route path={ROUTES.HOME} element={<HomeRedirect />} />
         <Route path="*" element={<HomeRedirect />} />
       </Routes>
     </>
