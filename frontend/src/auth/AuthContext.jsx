@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useMemo, useState } from 'react';
 
 const STORAGE_KEY = 'auth_user';
 
@@ -15,6 +15,40 @@ function readStoredUser() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
+  const [loading, setLoading] = useState(true);
+  const [justLoggedIn, setJustLoggedIn] = useState(false);
+  const prevUserRef = useRef(user);
+
+  // Fetch user data from auth server on mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const authUrl = import.meta.env.VITE_AUTH_URL || "http://localhost:3000";
+        const response = await fetch(`${authUrl}/user`, { credentials: "include" });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.user) {
+            setUser(data.user);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUser();
+  }, []);
+
+  // Detect when user logs in (transitions from null/falsy to truthy)
+  useEffect(() => {
+    if (!prevUserRef.current && user) {
+      setJustLoggedIn(true);
+    }
+    prevUserRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     if (user) {
@@ -26,10 +60,11 @@ export function AuthProvider({ children }) {
 
   const login = useCallback((nextUser) => setUser(nextUser), []);
   const logout = useCallback(() => setUser(null), []);
+  const clearJustLoggedIn = useCallback(() => setJustLoggedIn(false), []);
 
   const value = useMemo(
-    () => ({ user, login, logout, isAuthenticated: Boolean(user) }),
-    [user, login, logout],
+    () => ({ user, login, logout, isAuthenticated: Boolean(user), loading, justLoggedIn, clearJustLoggedIn }),
+    [user, login, logout, loading, justLoggedIn, clearJustLoggedIn],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

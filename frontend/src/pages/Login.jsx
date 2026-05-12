@@ -1,4 +1,7 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../auth/AuthContext';
+import { ROUTES } from '../routes';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
@@ -6,19 +9,18 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
-import { useAuth } from '../auth/AuthContext';
-import { ROUTES } from '../routes';
+import GoogleIcon from '@mui/icons-material/Google';
 
 export default function Login() {
-  const { login } = useAuth();
+  const authUrl = import.meta.env.VITE_AUTH_URL;
+  const { isAuthenticated, loading } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
-  const redirectTo = location.state?.from?.pathname ?? ROUTES.DASHBOARD;
 
-  const handleDemoLogin = () => {
-    login({ username: 'demo' });
-    navigate(redirectTo, { replace: true });
-  };
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      navigate(ROUTES.DASHBOARD, { replace: true });
+    }
+  }, [loading, isAuthenticated, navigate]);
 
   return (
     <Box
@@ -50,11 +52,20 @@ export default function Login() {
             </Box>
             <Typography variant="h2">Risk Monitor</Typography>
             <Typography variant="body2" color="text.secondary">
-              Login form coming in a later ticket. For now, sign in with the demo
-              account to verify navbar behaviour.
+              Sign in with your Google account to access the dashboard.
             </Typography>
-            <Button fullWidth variant="contained" onClick={handleDemoLogin}>
-              Sign in as demo
+            <Button
+              fullWidth
+              variant="contained"
+              startIcon={<GoogleIcon />}
+              href={`${authUrl}/auth/google`}
+              sx={{
+                textTransform: 'none',
+                fontSize: '1rem',
+                fontWeight: 500,
+              }}
+            >
+              Sign in with Google
             </Button>
           </Stack>
         </CardContent>

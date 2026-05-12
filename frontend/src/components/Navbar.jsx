@@ -23,6 +23,7 @@ import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
 
 import { useAuth } from '../auth/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 import { layout } from '../theme';
 import { ROUTES } from '../routes';
 
@@ -103,7 +104,7 @@ function DrawerContent({ user, onLogout, onNavigate }) {
           variant="caption"
           sx={{ display: 'block', color: 'rgba(255,255,255,0.6)', mb: 1 }}
         >
-          Signed in as <strong>{user?.username}</strong>
+          Signed in as <strong>{user?.displayName || user?.username || 'User'}</strong>
         </Typography>
         <Button
           fullWidth
@@ -125,13 +126,31 @@ function DrawerContent({ user, onLogout, onNavigate }) {
 
 export default function Navbar() {
   const { user, logout } = useAuth();
+  const { showNotification } = useNotification();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     logout();
     setMobileOpen(false);
-    navigate(ROUTES.LOGIN, { replace: true });
+    
+    // Show success notification
+    showNotification('Logged out successfully', 'success', 4000);
+    
+    // Call auth server logout endpoint to clear session properly
+    const authUrl = import.meta.env.VITE_AUTH_URL || "http://localhost:3000";
+    
+    try {
+      // Call logout endpoint (don't redirect to it)
+      await fetch(`${authUrl}/logout`, { credentials: 'include' });
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
+    
+    // Navigate to login after a brief delay to show notification
+    setTimeout(() => {
+      navigate(ROUTES.LOGIN, { replace: true });
+    }, 500);
   };
 
   const handleMobileNavigate = () => setMobileOpen(false);
