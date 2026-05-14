@@ -1,10 +1,6 @@
 package com.riskmonitor.entity;
-
-import jakarta.persistence.Column;
-import jakarta.persistence.Embedded;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.riskmonitor.dto.risk.RiskStruct.RiskPeriod;
+import jakarta.persistence.*;
 import lombok.Getter;
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -25,11 +21,16 @@ public class Risk {
     @Column(name = "description", length = 1000)
     private String description;
 
-    @Column(name = "interval_seconds", nullable = false)
-    private Long intervalSeconds;
+    @Column(name = "time_interval_val", nullable = false)
+    private Long timeIntervalValue;
 
-    @Column(name = "unit", nullable = false, length = 20)
-    private String unit;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "time_interval_unit", nullable = false, length = 20)
+    private RiskPeriod timeIntervalUnit;
+
+    // user defined, can be entered without strict validation, as should be read-only value (e.g., 'km/h', 'incidents')
+    @Column(name = "measurement_unit", nullable = false, length = 50)
+    private String measurementUnit;
 
     @Column(name = "lower_max_threshold", precision = 19, scale = 4)
     private BigDecimal lowerMaxThreshold;
@@ -59,8 +60,9 @@ public class Risk {
     public Risk(
             String name,
             String description,
-            Long intervalSeconds,
-            String unit,
+            Long timeIntervalValue,
+            RiskPeriod timeIntervalUnit,
+            String measurementUnit,
             BigDecimal lowerMaxThreshold,
             BigDecimal lowerMediumThreshold,
             BigDecimal upperMediumThreshold,
@@ -71,8 +73,9 @@ public class Risk {
         this.id = UUID.randomUUID();
         this.name = name;
         this.description = description;
-        this.intervalSeconds = intervalSeconds;
-        this.unit = unit;
+        this.timeIntervalValue = timeIntervalValue;
+        this.timeIntervalUnit = timeIntervalUnit;
+        this.measurementUnit = measurementUnit;
         this.lowerMaxThreshold = lowerMaxThreshold;
         this.lowerMediumThreshold = lowerMediumThreshold;
         this.upperMediumThreshold = upperMediumThreshold;
@@ -84,16 +87,17 @@ public class Risk {
         validateValidityPeriod();
     }
 
-    public void update(UpdateRiskFields fields) {
-        this.name = fields.name();
-        this.description = fields.description();
-        this.intervalSeconds = fields.intervalSeconds();
-        this.unit = fields.unit();
-        this.lowerMaxThreshold = fields.lowerMaxThreshold();
-        this.lowerMediumThreshold = fields.lowerMediumThreshold();
-        this.upperMediumThreshold = fields.upperMediumThreshold();
-        this.upperMaxThreshold = fields.upperMaxThreshold();
-        this.validUntil = fields.validUntil();
+    public void update(UpdateRiskFields modifiedRisk) {
+        this.name = modifiedRisk.name();
+        this.description = modifiedRisk.description();
+        this.timeIntervalValue = modifiedRisk.timeIntervalValue();
+        this.timeIntervalUnit = modifiedRisk.timeIntervalUnit();
+        this.measurementUnit = modifiedRisk.measurementUnit();
+        this.lowerMaxThreshold = modifiedRisk.lowerMaxThreshold();
+        this.lowerMediumThreshold = modifiedRisk.lowerMediumThreshold();
+        this.upperMediumThreshold = modifiedRisk.upperMediumThreshold();
+        this.upperMaxThreshold = modifiedRisk.upperMaxThreshold();
+        this.validUntil = modifiedRisk.validUntil();
         validateThresholds();
         validateValidityPeriod();
         this.modifyDetails.update();
@@ -147,8 +151,9 @@ public class Risk {
     public record UpdateRiskFields(
             String name,
             String description,
-            Long intervalSeconds,
-            String unit,
+            Long timeIntervalValue,
+            RiskPeriod timeIntervalUnit,
+            String measurementUnit,
             BigDecimal lowerMaxThreshold,
             BigDecimal lowerMediumThreshold,
             BigDecimal upperMediumThreshold,

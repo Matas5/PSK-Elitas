@@ -15,19 +15,25 @@ public final class RiskStruct {
     private RiskStruct() {
     }
 
-    public record RiskCreateReq(
+    public enum RiskPeriod {
+        SECOND, MINUTE, HOUR, DAY, MONTH, QUARTER, YEAR
+    }
 
+    public record RiskCreateReq(
             @NotBlank @Size(min = 3, max = 100)
             String name,
 
             @Size(max = 1000)
             String description,
 
-            @NotNull @Positive @Max(315_360_000L)
-            Long intervalSeconds,
+            @NotNull @Positive @Max(999L)
+            Long timeIntervalValue,
 
-            @NotBlank @Size(max = 20)
-            String unit,
+            @NotNull
+            RiskPeriod timeIntervalUnit,
+
+            @NotBlank @Size(max = 50)
+            String measurementUnit,
 
             @NotNull
             Boolean hasUpperBounds,
@@ -46,40 +52,13 @@ public final class RiskStruct {
             Instant validUntil
     ) {}
 
-    public record RiskUpdateReq(
-
-            @NotBlank @Size(min = 3, max = 100)
-            String name,
-
-            @Size(max = 1000)
-            String description,
-
-            @NotNull @Positive @Max(315_360_000L)
-            Long intervalSeconds,
-
-            @NotBlank @Size(max = 20)
-            String unit,
-
-            @NotNull
-            Boolean hasUpperBounds,
-
-            @NotNull
-            Boolean hasLowerBounds,
-
-            BigDecimal lowerMaxThreshold,
-            BigDecimal lowerMediumThreshold,
-            BigDecimal upperMediumThreshold,
-            BigDecimal upperMaxThreshold,
-
-            Instant validUntil
-    ) {}
-
     public record RiskResp(
             UUID id,
             String name,
             String description,
-            Long intervalSeconds,
-            String unit,
+            Long timeIntervalValue,
+            RiskPeriod timeIntervalUnit,
+            String measurementUnit,
             BigDecimal lowerMaxThreshold,
             BigDecimal lowerMediumThreshold,
             BigDecimal upperMediumThreshold,
@@ -97,8 +76,9 @@ public final class RiskStruct {
                     risk.getId(),
                     risk.getName(),
                     risk.getDescription(),
-                    risk.getIntervalSeconds(),
-                    risk.getUnit(),
+                    risk.getTimeIntervalValue(),
+                    risk.getTimeIntervalUnit(),
+                    risk.getMeasurementUnit(),
                     risk.getLowerMaxThreshold(),
                     risk.getLowerMediumThreshold(),
                     risk.getUpperMediumThreshold(),
