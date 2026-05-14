@@ -12,7 +12,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import { createRisk } from '../api/risksApi';
+import { createRisk, updateRisk } from '../api/risksApi';
 import {
   TIME_INTERVAL_UNITS,
   RISK_DIRECTIONS,
@@ -20,6 +20,7 @@ import {
 
 const NAME_MIN = 3;
 const NAME_MAX = 100;
+const CATEGORY_MAX = 100;
 const DESCRIPTION_MAX = 1000;
 const INTERVAL_MIN = 1;
 const INTERVAL_MAX = 999;
@@ -27,6 +28,7 @@ const MEASUREMENT_UNIT_MAX = 50;
 
 const INITIAL_STATE = {
   name: '',
+  category: '',
   description: '',
   timeIntervalValue: '1',
   timeIntervalUnit: 'HOUR',
@@ -48,10 +50,56 @@ function toLocalDateTimeInput(date) {
   );
 }
 
+function toDateTimeInput(value) {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  return toLocalDateTimeInput(date);
+}
+
 function parseDecimal(value) {
   if (value === '' || value === null || value === undefined) return null;
   const n = Number(value);
   return Number.isFinite(n) ? n : null;
+}
+
+function hasValue(value) {
+  return value !== null && value !== undefined && value !== '';
+}
+
+function directionFromRisk(risk) {
+  const hasUpper = hasValue(risk?.upperMediumThreshold) && hasValue(risk?.upperMaxThreshold);
+  const hasLower = hasValue(risk?.lowerMediumThreshold) && hasValue(risk?.lowerMaxThreshold);
+
+  if (hasUpper && hasLower) return 'BOTH';
+  if (hasUpper) return 'HIGHER';
+  if (hasLower) return 'LOWER';
+  return '';
+}
+
+function riskToForm(risk) {
+  if (!risk) {
+    return {
+      ...INITIAL_STATE,
+      validFrom: toLocalDateTimeInput(new Date()),
+    };
+  }
+
+  return {
+    name: risk.name || '',
+    category: risk.category || '',
+    description: risk.description || '',
+    timeIntervalValue: risk.timeIntervalValue ? String(risk.timeIntervalValue) : '1',
+    timeIntervalUnit: risk.timeIntervalUnit || 'HOUR',
+    measurementUnit: risk.measurementUnit || '',
+    direction: directionFromRisk(risk),
+    upperMedium: hasValue(risk.upperMediumThreshold) ? String(risk.upperMediumThreshold) : '',
+    upperMax: hasValue(risk.upperMaxThreshold) ? String(risk.upperMaxThreshold) : '',
+    lowerMedium: hasValue(risk.lowerMediumThreshold) ? String(risk.lowerMediumThreshold) : '',
+    lowerMax: hasValue(risk.lowerMaxThreshold) ? String(risk.lowerMaxThreshold) : '',
+    validFrom: toDateTimeInput(risk.validFrom),
+    validUntil: toDateTimeInput(risk.validUntil),
+  };
 }
 
 function ThresholdDot({ tone }) {
@@ -79,11 +127,9 @@ function ThresholdGroupLabel({ children }) {
   );
 }
 
-export default function CreateRiskDialog({ onClose, onCreated }) {
-  const [form, setForm] = useState(() => ({
-    ...INITIAL_STATE,
-    validFrom: toLocalDateTimeInput(new Date()),
-  }));
+export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUpdated }) {
+  const isEdit = Boolean(risk);
+  const [form, setForm] = useState(() => riskToForm(risk));
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -109,6 +155,13 @@ export default function CreateRiskDialog({ onClose, onCreated }) {
     if (!name) next.name = 'Name is required.';
     else if (name.length < NAME_MIN || name.length > NAME_MAX) {
       next.name = `Name must be ${NAME_MIN}–${NAME_MAX} characters.`;
+    }
+
+    const category = form.category.trim();
+    if (!category) {
+      next.category = 'Category is required.';
+    } else if (category.length > CATEGORY_MAX) {
+      next.category = `Category must be ≤ ${CATEGORY_MAX} characters.`;
     }
 
     if (form.description.trim().length > DESCRIPTION_MAX) {
@@ -199,6 +252,7 @@ export default function CreateRiskDialog({ onClose, onCreated }) {
 
     const body = {
       name: form.name.trim(),
+      category: form.category.trim(),
       description: form.description.trim() || null,
       timeIntervalValue: Number(form.timeIntervalValue),
       timeIntervalUnit: form.timeIntervalUnit,
@@ -215,11 +269,16 @@ export default function CreateRiskDialog({ onClose, onCreated }) {
 
     try {
       setSubmitting(true);
-      const created = await createRisk(body);
-      if (onCreated) onCreated(created);
+      if (isEdit) {
+        const updated = await updateRisk(risk.id, body);
+        if (onUpdated) onUpdated(updated);
+      } else {
+        const created = await createRisk(body);
+        if (onCreated) onCreated(created);
+      }
       onClose();
     } catch (err) {
-      setSubmitError(err.message || 'Failed to create risk.');
+      setSubmitError(err.message || `Failed to ${isEdit ? 'update' : 'create'} risk.`);
     } finally {
       setSubmitting(false);
     }
@@ -240,7 +299,7 @@ export default function CreateRiskDialog({ onClose, onCreated }) {
       onSubmit={handleSubmit}
       noValidate
     >
-      <DialogTitle>Create risk</DialogTitle>
+      <DialogTitle>{isEdit ? 'Edit risk' : 'Create risk'}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2.5}>
           <TextField
@@ -251,6 +310,16 @@ export default function CreateRiskDialog({ onClose, onCreated }) {
             error={Boolean(errors.name)}
             helperText={errors.name || `${form.name.trim().length}/${NAME_MAX}`}
             inputProps={{ maxLength: NAME_MAX }}
+          />
+
+          <TextField
+            label="Category"
+            required
+            value={form.category}
+            onChange={update('category')}
+            error={Boolean(errors.category)}
+            helperText={errors.category || `${form.category.trim().length}/${CATEGORY_MAX}`}
+            inputProps={{ maxLength: CATEGORY_MAX }}
           />
 
           <TextField
@@ -437,7 +506,9 @@ export default function CreateRiskDialog({ onClose, onCreated }) {
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={handleClose} disabled={submitting}>Cancel</Button>
         <Button type="submit" variant="contained" disabled={submitting}>
-          {submitting ? 'Creating…' : 'Create risk'}
+          {submitting
+            ? `${isEdit ? 'Saving' : 'Creating'}…`
+            : `${isEdit ? 'Save changes' : 'Create risk'}`}
         </Button>
       </DialogActions>
     </Dialog>
