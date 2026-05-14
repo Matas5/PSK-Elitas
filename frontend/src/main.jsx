@@ -7,6 +7,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import App from './App.jsx';
 import theme from './theme';
 import { AuthProvider } from './auth/AuthContext.jsx';
+import { NotificationProvider } from './context/NotificationContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
@@ -14,7 +15,9 @@ createRoot(document.getElementById('root')).render(
       <CssBaseline />
       <BrowserRouter>
         <AuthProvider>
-          <App />
+          <NotificationProvider>
+            <App />
+          </NotificationProvider>
         </AuthProvider>
       </BrowserRouter>
     </ThemeProvider>

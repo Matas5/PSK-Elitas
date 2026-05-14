@@ -3,6 +3,7 @@ import Box from '@mui/material/Box';
 import Toolbar from '@mui/material/Toolbar';
 
 import Navbar from './components/Navbar';
+import Notification from './components/Notification';
 import RequireAuth from './auth/RequireAuth';
 import { useAuth } from './auth/AuthContext';
 import { layout } from './theme';
@@ -30,48 +31,58 @@ function AuthedShell({ children }) {
 }
 
 function HomeRedirect() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  // While auth is initializing, don't redirect — allow AuthProvider to determine state
+  if (loading) return null;
   return <Navigate to={isAuthenticated ? ROUTES.DASHBOARD : ROUTES.LOGIN} replace />;
 }
 
 export default function App() {
   return (
-    <Routes>
-      <Route path={ROUTES.LOGIN} element={<Login />} />
-      <Route
-        path={ROUTES.DASHBOARD}
-        element={(
-          <RequireAuth>
-            <AuthedShell><Dashboard /></AuthedShell>
-          </RequireAuth>
-        )}
-      />
-      <Route
-        path={ROUTES.RISKS}
-        element={(
-          <RequireAuth>
-            <AuthedShell><Risks /></AuthedShell>
-          </RequireAuth>
-        )}
-      />
-      <Route
-        path={ROUTES.REPORTS}
-        element={(
-          <RequireAuth>
-            <AuthedShell><Reports /></AuthedShell>
-          </RequireAuth>
-        )}
-      />
-      <Route
-        path={ROUTES.PROFILE}
-        element={(
-          <RequireAuth>
-            <AuthedShell><Profile /></AuthedShell>
-          </RequireAuth>
-        )}
-      />
-      <Route path={ROUTES.HOME} element={<HomeRedirect />} />
-      <Route path="*" element={<HomeRedirect />} />
-    </Routes>
+<>
+  <Notification />
+  <Routes>
+    <Route path={ROUTES.LOGIN} element={<Login />} />
+
+    <Route
+      path={ROUTES.DASHBOARD}
+      element={(
+        <RequireAuth>
+          <AuthedShell><Dashboard /></AuthedShell>
+        </RequireAuth>
+      )}
+    />
+
+    <Route
+      path={ROUTES.RISKS}
+      element={(
+        <RequireAuth>
+          <AuthedShell><Risks /></AuthedShell>
+        </RequireAuth>
+      )}
+    />
+
+    <Route
+      path={ROUTES.REPORTS}
+      element={(
+        <RequireAuth>
+          <AuthedShell><Reports /></AuthedShell>
+        </RequireAuth>
+      )}
+    />
+
+    <Route
+      path={ROUTES.PROFILE}
+      element={(
+        <RequireAuth>
+          <AuthedShell><Profile /></AuthedShell>
+        </RequireAuth>
+      )}
+    />
+
+    <Route path={ROUTES.HOME} element={<HomeRedirect />} />
+    <Route path="*" element={<HomeRedirect />} />
+  </Routes>
+</>
   );
 }
