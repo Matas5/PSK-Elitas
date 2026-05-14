@@ -8,7 +8,7 @@ import { useAuth } from './auth/AuthContext';
 import { layout } from './theme';
 import { ROUTES } from './routes';
 
-import { Dashboard, Login, Profile, Reports } from './pages';
+import { Dashboard, Login, Profile, Reports, Risks } from './pages';
 
 function AuthedShell({ children }) {
   return (
@@ -43,6 +43,14 @@ export default function App() {
         element={(
           <RequireAuth>
             <AuthedShell><Dashboard /></AuthedShell>
+          </RequireAuth>
+        )}
+      />
+      <Route
+        path={ROUTES.RISKS}
+        element={(
+          <RequireAuth>
+            <AuthedShell><Risks /></AuthedShell>
           </RequireAuth>
         )}
       />
