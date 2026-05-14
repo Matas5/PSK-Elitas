@@ -9,7 +9,7 @@ import { useAuth } from './auth/AuthContext';
 import { layout } from './theme';
 import { ROUTES } from './routes';
 
-import { Dashboard, Login, Profile, Reports } from './pages';
+import { Dashboard, Login, Profile, Reports, Risks } from './pages';
 
 function AuthedShell({ children }) {
   return (
@@ -39,37 +39,50 @@ function HomeRedirect() {
 
 export default function App() {
   return (
-    <>
-      <Notification />
-      <Routes>
-        <Route path={ROUTES.LOGIN} element={<Login />} />
-        <Route
-          path={ROUTES.DASHBOARD}
-          element={(
-            <RequireAuth>
-              <AuthedShell><Dashboard /></AuthedShell>
-            </RequireAuth>
-          )}
-        />
-        <Route
-          path={ROUTES.REPORTS}
-          element={(
-            <RequireAuth>
-              <AuthedShell><Reports /></AuthedShell>
-            </RequireAuth>
-          )}
-        />
-        <Route
-          path={ROUTES.PROFILE}
-          element={(
-            <RequireAuth>
-              <AuthedShell><Profile /></AuthedShell>
-            </RequireAuth>
-          )}
-        />
-        <Route path={ROUTES.HOME} element={<HomeRedirect />} />
-        <Route path="*" element={<HomeRedirect />} />
-      </Routes>
-    </>
+<>
+  <Notification />
+  <Routes>
+    <Route path={ROUTES.LOGIN} element={<Login />} />
+
+    <Route
+      path={ROUTES.DASHBOARD}
+      element={(
+        <RequireAuth>
+          <AuthedShell><Dashboard /></AuthedShell>
+        </RequireAuth>
+      )}
+    />
+
+    <Route
+      path={ROUTES.RISKS}
+      element={(
+        <RequireAuth>
+          <AuthedShell><Risks /></AuthedShell>
+        </RequireAuth>
+      )}
+    />
+
+    <Route
+      path={ROUTES.REPORTS}
+      element={(
+        <RequireAuth>
+          <AuthedShell><Reports /></AuthedShell>
+        </RequireAuth>
+      )}
+    />
+
+    <Route
+      path={ROUTES.PROFILE}
+      element={(
+        <RequireAuth>
+          <AuthedShell><Profile /></AuthedShell>
+        </RequireAuth>
+      )}
+    />
+
+    <Route path={ROUTES.HOME} element={<HomeRedirect />} />
+    <Route path="*" element={<HomeRedirect />} />
+  </Routes>
+</>
   );
 }
