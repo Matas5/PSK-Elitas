@@ -18,6 +18,9 @@ public class Risk {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
+    @Column(name = "category", length = 100)
+    private String category;
+
     @Column(name = "description", length = 1000)
     private String description;
 
@@ -59,6 +62,7 @@ public class Risk {
 
     public Risk(
             String name,
+            String category,
             String description,
             Long timeIntervalValue,
             RiskPeriod timeIntervalUnit,
@@ -72,6 +76,7 @@ public class Risk {
     ) {
         this.id = UUID.randomUUID();
         this.name = name;
+        this.category = category;
         this.description = description;
         this.timeIntervalValue = timeIntervalValue;
         this.timeIntervalUnit = timeIntervalUnit;
@@ -89,6 +94,7 @@ public class Risk {
 
     public void update(UpdateRiskFields modifiedRisk) {
         this.name = modifiedRisk.name();
+        this.category = modifiedRisk.category();
         this.description = modifiedRisk.description();
         this.timeIntervalValue = modifiedRisk.timeIntervalValue();
         this.timeIntervalUnit = modifiedRisk.timeIntervalUnit();
@@ -97,6 +103,7 @@ public class Risk {
         this.lowerMediumThreshold = modifiedRisk.lowerMediumThreshold();
         this.upperMediumThreshold = modifiedRisk.upperMediumThreshold();
         this.upperMaxThreshold = modifiedRisk.upperMaxThreshold();
+        this.validFrom = modifiedRisk.validFrom();
         this.validUntil = modifiedRisk.validUntil();
         validateThresholds();
         validateValidityPeriod();
@@ -150,6 +157,7 @@ public class Risk {
 
     public record UpdateRiskFields(
             String name,
+            String category,
             String description,
             Long timeIntervalValue,
             RiskPeriod timeIntervalUnit,
@@ -158,6 +166,7 @@ public class Risk {
             BigDecimal lowerMediumThreshold,
             BigDecimal upperMediumThreshold,
             BigDecimal upperMaxThreshold,
+            Instant validFrom,
             Instant validUntil
     ) {}
 }

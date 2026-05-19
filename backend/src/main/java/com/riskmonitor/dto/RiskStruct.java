@@ -23,6 +23,45 @@ public final class RiskStruct {
             @NotBlank @Size(min = 3, max = 100)
             String name,
 
+            @NotBlank @Size(max = 100)
+            String category,
+
+            @Size(max = 1000)
+            String description,
+
+            @NotNull @Positive @Max(999L)
+            Long timeIntervalValue,
+
+            @NotNull
+            RiskPeriod timeIntervalUnit,
+
+            @NotBlank @Size(max = 50)
+            String measurementUnit,
+
+            @NotNull
+            Boolean hasUpperBounds,
+
+            @NotNull
+            Boolean hasLowerBounds,
+
+            BigDecimal lowerMaxThreshold,
+            BigDecimal lowerMediumThreshold,
+            BigDecimal upperMediumThreshold,
+            BigDecimal upperMaxThreshold,
+
+            @NotNull
+            Instant validFrom,
+
+            Instant validUntil
+    ) {}
+
+    public record RiskUpdateReq(
+            @NotBlank @Size(min = 3, max = 100)
+            String name,
+
+            @NotBlank @Size(max = 100)
+            String category,
+
             @Size(max = 1000)
             String description,
 
@@ -55,6 +94,7 @@ public final class RiskStruct {
     public record RiskResp(
             UUID id,
             String name,
+            String category,
             String description,
             Long timeIntervalValue,
             RiskPeriod timeIntervalUnit,
@@ -75,6 +115,7 @@ public final class RiskStruct {
             return new RiskResp(
                     risk.getId(),
                     risk.getName(),
+                    risk.getCategory(),
                     risk.getDescription(),
                     risk.getTimeIntervalValue(),
                     risk.getTimeIntervalUnit(),
