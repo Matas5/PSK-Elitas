@@ -9,6 +9,7 @@ import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 
@@ -38,11 +39,11 @@ function formatDateTime(value) {
 
 function formatMediumThreshold(risk) {
   const parts = [];
-  if (hasValue(risk?.upperMediumThreshold)) {
-    parts.push(`Upper >= ${risk.upperMediumThreshold}`);
+  if (hasValue(risk?.upperMidThreshold)) {
+    parts.push(`Upper >= ${risk.upperMidThreshold}`);
   }
-  if (hasValue(risk?.lowerMediumThreshold)) {
-    parts.push(`Lower <= ${risk.lowerMediumThreshold}`);
+  if (hasValue(risk?.lowerMidThreshold)) {
+    parts.push(`Lower <= ${risk.lowerMidThreshold}`);
   }
   return parts.length > 0 ? parts.join('; ') : '-';
 }
@@ -52,8 +53,8 @@ function formatHighThreshold(risk) {
   if (hasValue(risk?.upperMaxThreshold)) {
     parts.push(`Upper >= ${risk.upperMaxThreshold}`);
   }
-  if (hasValue(risk?.lowerMaxThreshold)) {
-    parts.push(`Lower <= ${risk.lowerMaxThreshold}`);
+  if (hasValue(risk?.lowerMinThreshold)) {
+    parts.push(`Lower <= ${risk.lowerMinThreshold}`);
   }
   return parts.length > 0 ? parts.join('; ') : '-';
 }
@@ -77,6 +78,7 @@ export default function RiskDetailsDialog({
   onClose,
   onEdit,
   onDelete,
+  onAddValue,
   deleting = false,
   deleteError = null,
 }) {
@@ -112,12 +114,12 @@ export default function RiskDetailsDialog({
               <ReadOnlyField label="Medium-risk threshold" value={formatMediumThreshold(risk)} />
               <ReadOnlyField label="High-risk threshold" value={formatHighThreshold(risk)} />
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <ReadOnlyField label="Upper medium threshold" value={risk.upperMediumThreshold} />
+                <ReadOnlyField label="Upper medium threshold" value={risk.upperMidThreshold} />
                 <ReadOnlyField label="Upper high threshold" value={risk.upperMaxThreshold} />
               </Stack>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <ReadOnlyField label="Lower medium threshold" value={risk.lowerMediumThreshold} />
-                <ReadOnlyField label="Lower high threshold" value={risk.lowerMaxThreshold} />
+                <ReadOnlyField label="Lower medium threshold" value={risk.lowerMidThreshold} />
+                <ReadOnlyField label="Lower high threshold" value={risk.lowerMinThreshold} />
               </Stack>
             </Stack>
           </Box>
@@ -134,6 +136,14 @@ export default function RiskDetailsDialog({
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose} disabled={deleting}>Close</Button>
+        <Button
+          variant="contained"
+          startIcon={<AddOutlinedIcon />}
+          onClick={onAddValue}
+          disabled={deleting}
+        >
+          Add value
+        </Button>
         <Button startIcon={<EditOutlinedIcon />} onClick={onEdit} disabled={deleting}>
           Edit
         </Button>

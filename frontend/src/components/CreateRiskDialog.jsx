@@ -34,10 +34,10 @@ const INITIAL_STATE = {
   timeIntervalUnit: 'HOUR',
   measurementUnit: '',
   direction: '',
-  upperMedium: '',
+  upperMid: '',
   upperMax: '',
-  lowerMedium: '',
-  lowerMax: '',
+  lowerMid: '',
+  lowerMin: '',
   validFrom: '',
   validUntil: '',
 };
@@ -68,8 +68,8 @@ function hasValue(value) {
 }
 
 function directionFromRisk(risk) {
-  const hasUpper = hasValue(risk?.upperMediumThreshold) && hasValue(risk?.upperMaxThreshold);
-  const hasLower = hasValue(risk?.lowerMediumThreshold) && hasValue(risk?.lowerMaxThreshold);
+  const hasUpper = hasValue(risk?.upperMidThreshold) && hasValue(risk?.upperMaxThreshold);
+  const hasLower = hasValue(risk?.lowerMidThreshold) && hasValue(risk?.lowerMinThreshold);
 
   if (hasUpper && hasLower) return 'BOTH';
   if (hasUpper) return 'HIGHER';
@@ -93,10 +93,10 @@ function riskToForm(risk) {
     timeIntervalUnit: risk.timeIntervalUnit || 'HOUR',
     measurementUnit: risk.measurementUnit || '',
     direction: directionFromRisk(risk),
-    upperMedium: hasValue(risk.upperMediumThreshold) ? String(risk.upperMediumThreshold) : '',
+    upperMid: hasValue(risk.upperMidThreshold) ? String(risk.upperMidThreshold) : '',
     upperMax: hasValue(risk.upperMaxThreshold) ? String(risk.upperMaxThreshold) : '',
-    lowerMedium: hasValue(risk.lowerMediumThreshold) ? String(risk.lowerMediumThreshold) : '',
-    lowerMax: hasValue(risk.lowerMaxThreshold) ? String(risk.lowerMaxThreshold) : '',
+    lowerMid: hasValue(risk.lowerMidThreshold) ? String(risk.lowerMidThreshold) : '',
+    lowerMin: hasValue(risk.lowerMinThreshold) ? String(risk.lowerMinThreshold) : '',
     validFrom: toDateTimeInput(risk.validFrom),
     validUntil: toDateTimeInput(risk.validUntil),
   };
@@ -194,30 +194,30 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
     }
 
     if (hasUpper) {
-      const med = parseDecimal(form.upperMedium);
+      const mid = parseDecimal(form.upperMid);
       const max = parseDecimal(form.upperMax);
-      if (med === null) next.upperMedium = 'Required number.';
+      if (mid === null) next.upperMid = 'Required number.';
       if (max === null) next.upperMax = 'Required number.';
-      if (med !== null && max !== null && !(med < max)) {
+      if (mid !== null && max !== null && !(mid < max)) {
         next.upperMax = 'High threshold must be greater than medium.';
       }
     }
 
     if (hasLower) {
-      const med = parseDecimal(form.lowerMedium);
-      const max = parseDecimal(form.lowerMax);
-      if (med === null) next.lowerMedium = 'Required number.';
-      if (max === null) next.lowerMax = 'Required number.';
-      if (med !== null && max !== null && !(med > max)) {
-        next.lowerMax = 'High threshold must be less than medium (lower = higher risk).';
+      const mid = parseDecimal(form.lowerMid);
+      const min = parseDecimal(form.lowerMin);
+      if (mid === null) next.lowerMid = 'Required number.';
+      if (min === null) next.lowerMin = 'Required number.';
+      if (mid !== null && min !== null && !(mid > min)) {
+        next.lowerMin = 'High threshold must be less than medium (lower = higher risk).';
       }
     }
 
     if (form.direction === 'BOTH') {
-      const lowerMed = parseDecimal(form.lowerMedium);
-      const upperMed = parseDecimal(form.upperMedium);
-      if (lowerMed !== null && upperMed !== null && !(lowerMed < upperMed)) {
-        next.upperMedium = 'Upper medium must be greater than lower medium.';
+      const lowerMid = parseDecimal(form.lowerMid);
+      const upperMid = parseDecimal(form.upperMid);
+      if (lowerMid !== null && upperMid !== null && !(lowerMid < upperMid)) {
+        next.upperMid = 'Upper medium must be greater than lower medium.';
       }
     }
 
@@ -259,10 +259,10 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
       measurementUnit: form.measurementUnit.trim(),
       hasUpperBounds: hasUpper,
       hasLowerBounds: hasLower,
-      upperMediumThreshold: hasUpper ? parseDecimal(form.upperMedium) : null,
+      upperMidThreshold: hasUpper ? parseDecimal(form.upperMid) : null,
       upperMaxThreshold: hasUpper ? parseDecimal(form.upperMax) : null,
-      lowerMediumThreshold: hasLower ? parseDecimal(form.lowerMedium) : null,
-      lowerMaxThreshold: hasLower ? parseDecimal(form.lowerMax) : null,
+      lowerMidThreshold: hasLower ? parseDecimal(form.lowerMid) : null,
+      lowerMinThreshold: hasLower ? parseDecimal(form.lowerMin) : null,
       validFrom: new Date(form.validFrom).toISOString(),
       validUntil: form.validUntil ? new Date(form.validUntil).toISOString() : null,
     };
@@ -409,10 +409,10 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
                       label={<><ThresholdDot tone="medium" />Medium at or above</>}
                       type="number"
                       required
-                      value={form.upperMedium}
-                      onChange={update('upperMedium')}
-                      error={Boolean(errors.upperMedium)}
-                      helperText={errors.upperMedium || ' '}
+                      value={form.upperMid}
+                      onChange={update('upperMid')}
+                      error={Boolean(errors.upperMid)}
+                      helperText={errors.upperMid || ' '}
                       inputProps={{ step: 'any' }}
                       sx={{ flex: 1 }}
                     />
@@ -441,10 +441,10 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
                       label={<><ThresholdDot tone="medium" />Medium at or below</>}
                       type="number"
                       required
-                      value={form.lowerMedium}
-                      onChange={update('lowerMedium')}
-                      error={Boolean(errors.lowerMedium)}
-                      helperText={errors.lowerMedium || ' '}
+                      value={form.lowerMid}
+                      onChange={update('lowerMid')}
+                      error={Boolean(errors.lowerMid)}
+                      helperText={errors.lowerMid || ' '}
                       inputProps={{ step: 'any' }}
                       sx={{ flex: 1 }}
                     />
@@ -452,10 +452,10 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
                       label={<><ThresholdDot tone="high" />High at or below</>}
                       type="number"
                       required
-                      value={form.lowerMax}
-                      onChange={update('lowerMax')}
-                      error={Boolean(errors.lowerMax)}
-                      helperText={errors.lowerMax || 'Must be less than medium'}
+                      value={form.lowerMin}
+                      onChange={update('lowerMin')}
+                      error={Boolean(errors.lowerMin)}
+                      helperText={errors.lowerMin || 'Must be less than medium'}
                       inputProps={{ step: 'any' }}
                       sx={{ flex: 1 }}
                     />
