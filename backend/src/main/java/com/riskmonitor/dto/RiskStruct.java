@@ -44,9 +44,9 @@ public final class RiskStruct {
             @NotNull
             Boolean hasLowerBounds,
 
-            BigDecimal lowerMaxThreshold,
-            BigDecimal lowerMediumThreshold,
-            BigDecimal upperMediumThreshold,
+            BigDecimal lowerMinThreshold,
+            BigDecimal lowerMidThreshold,
+            BigDecimal upperMidThreshold,
             BigDecimal upperMaxThreshold,
 
             @NotNull
@@ -80,9 +80,9 @@ public final class RiskStruct {
             @NotNull
             Boolean hasLowerBounds,
 
-            BigDecimal lowerMaxThreshold,
-            BigDecimal lowerMediumThreshold,
-            BigDecimal upperMediumThreshold,
+            BigDecimal lowerMinThreshold,
+            BigDecimal lowerMidThreshold,
+            BigDecimal upperMidThreshold,
             BigDecimal upperMaxThreshold,
 
             @NotNull
@@ -99,9 +99,9 @@ public final class RiskStruct {
             Long timeIntervalValue,
             RiskPeriod timeIntervalUnit,
             String measurementUnit,
-            BigDecimal lowerMaxThreshold,
-            BigDecimal lowerMediumThreshold,
-            BigDecimal upperMediumThreshold,
+            BigDecimal lowerMinThreshold,
+            BigDecimal lowerMidThreshold,
+            BigDecimal upperMidThreshold,
             BigDecimal upperMaxThreshold,
             Instant validFrom,
             Instant validUntil,
@@ -120,9 +120,9 @@ public final class RiskStruct {
                     risk.getTimeIntervalValue(),
                     risk.getTimeIntervalUnit(),
                     risk.getMeasurementUnit(),
-                    risk.getLowerMaxThreshold(),
-                    risk.getLowerMediumThreshold(),
-                    risk.getUpperMediumThreshold(),
+                    risk.getLowerMinThreshold(),
+                    risk.getLowerMidThreshold(),
+                    risk.getUpperMidThreshold(),
                     risk.getUpperMaxThreshold(),
                     risk.getValidFrom(),
                     risk.getValidUntil(),
