@@ -20,18 +20,18 @@ public class RiskService {
 
     // for testing, use dto to avoid sending unnecessary fields
     @Transactional(readOnly = true)
-    public Risk getRisk(UUID id) {
-        return riskRepository.findById(id)
+    public Risk getRisk(UUID id, String googleUserId) {
+        return riskRepository.findByIdAndGoogleUserId(id, googleUserId)
                 .orElseThrow(() -> new IllegalArgumentException("Risk not found: " + id));
     }
 
     @Transactional(readOnly = true)
-    public List<Risk> listRisks() {
-        return riskRepository.findAll(Sort.by(Sort.Direction.ASC, "name"));
+    public List<Risk> listRisks(String googleUserId) {
+        return riskRepository.findAllByGoogleUserId(googleUserId, Sort.by(Sort.Direction.ASC, "name"));
     }
 
     @Transactional
-    public Risk createRisk(RiskCreateReq req) {
+    public Risk createRisk(RiskCreateReq req, String googleUserId) {
         validateSelectedBounds(
                 req.hasUpperBounds(),
                 req.hasLowerBounds(),
@@ -55,6 +55,7 @@ public class RiskService {
         BigDecimal upperMax = req.hasUpperBounds() ? req.upperMaxThreshold() : null;
 
         Risk risk = new Risk(
+                googleUserId,
                 req.name().trim(),
                 req.category().trim(),
                 req.description(),
@@ -73,7 +74,7 @@ public class RiskService {
     }
 
     @Transactional
-    public Risk updateRisk(UUID id, RiskUpdateReq req) {
+    public Risk updateRisk(UUID id, RiskUpdateReq req, String googleUserId) {
         validateSelectedBounds(
                 req.hasUpperBounds(),
                 req.hasLowerBounds(),
@@ -96,7 +97,7 @@ public class RiskService {
         BigDecimal upperMedium = req.hasUpperBounds() ? req.upperMidThreshold() : null;
         BigDecimal upperMax = req.hasUpperBounds() ? req.upperMaxThreshold() : null;
 
-        Risk risk = getRisk(id);
+        Risk risk = getRisk(id, googleUserId);
         risk.update(new Risk.UpdateRiskFields(
                 req.name().trim(),
                 req.category().trim(),
@@ -116,8 +117,8 @@ public class RiskService {
     }
 
     @Transactional
-    public void deleteRisk(UUID id) {
-        Risk risk = getRisk(id);
+    public void deleteRisk(UUID id, String googleUserId) {
+        Risk risk = getRisk(id, googleUserId);
         riskRepository.delete(risk);
     }
 
