@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import RiskValueList from './RiskValueList';
 
 import {
   formatDirection,
@@ -130,6 +131,13 @@ export default function RiskDetailsDialog({
             <ReadOnlyField label="Valid from" value={formatDateTime(risk.validFrom)} />
             <ReadOnlyField label="Valid until" value={formatDateTime(risk.validUntil)} />
           </Stack>
+
+          <Divider />
+
+          <RiskValueList
+              riskId={risk.id}
+              measurementUnit={risk.measurementUnit}
+          />
 
           {deleteError && <Alert severity="error">{deleteError}</Alert>}
         </Stack>
