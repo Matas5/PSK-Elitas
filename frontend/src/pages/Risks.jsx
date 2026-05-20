@@ -21,6 +21,7 @@ import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 
 import { deleteRisk, listRisks } from '../api/risksApi';
 import CreateRiskDialog from '../components/CreateRiskDialog';
+import LogRiskValueDialog from '../components/LogRiskValueDialog';
 import RiskDetailsDialog from '../components/RiskDetailsDialog';
 import { useNotification } from '../context/NotificationContext';
 import {
@@ -32,6 +33,7 @@ import {
 export default function Risks() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [logValueOpen, setLogValueOpen] = useState(false);
   const [risks, setRisks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState(null);
@@ -89,6 +91,14 @@ export default function Risks() {
     loadRiskList();
   };
 
+  const handleAddValue = () => {
+    setLogValueOpen(true);
+  };
+
+  const handleValueLogged = () => {
+    showNotification(`Value logged for "${selectedRisk?.name}".`, 'success');
+  };
+
   const handleDeleteRequest = () => {
     setDeleteError(null);
     setConfirmDeleteOpen(true);
@@ -114,7 +124,7 @@ export default function Risks() {
   };
 
   const closeDetails = () => {
-    if (deleting || editOpen) return;
+    if (deleting || editOpen || logValueOpen) return;
     setSelectedRisk(null);
     setDeleteError(null);
   };
@@ -233,13 +243,22 @@ export default function Risks() {
 
       <RiskDetailsDialog
         risk={selectedRisk}
-        open={Boolean(selectedRisk) && !editOpen}
+        open={Boolean(selectedRisk) && !editOpen && !logValueOpen}
         onClose={closeDetails}
         onEdit={handleEdit}
+        onAddValue={handleAddValue}
         onDelete={handleDeleteRequest}
         deleting={deleting}
         deleteError={deleteError}
       />
+
+      {logValueOpen && selectedRisk && (
+        <LogRiskValueDialog
+          risk={selectedRisk}
+          onClose={() => setLogValueOpen(false)}
+          onCreated={handleValueLogged}
+        />
+      )}
 
       <Dialog
         open={confirmDeleteOpen}

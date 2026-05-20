@@ -35,23 +35,23 @@ public class RiskService {
         validateSelectedBounds(
                 req.hasUpperBounds(),
                 req.hasLowerBounds(),
-                req.upperMediumThreshold(),
+                req.upperMidThreshold(),
                 req.upperMaxThreshold(),
-                req.lowerMediumThreshold(),
-                req.lowerMaxThreshold()
+                req.lowerMidThreshold(),
+                req.lowerMinThreshold()
         );
         validateThresholdOrdering(
                 req.hasUpperBounds(),
                 req.hasLowerBounds(),
-                req.upperMediumThreshold(),
+                req.upperMidThreshold(),
                 req.upperMaxThreshold(),
-                req.lowerMediumThreshold(),
-                req.lowerMaxThreshold()
+                req.lowerMidThreshold(),
+                req.lowerMinThreshold()
         );
 
-        BigDecimal lowerMax = req.hasLowerBounds() ? req.lowerMaxThreshold() : null;
-        BigDecimal lowerMedium = req.hasLowerBounds() ? req.lowerMediumThreshold() : null;
-        BigDecimal upperMedium = req.hasUpperBounds() ? req.upperMediumThreshold() : null;
+        BigDecimal lowerMax = req.hasLowerBounds() ? req.lowerMinThreshold() : null;
+        BigDecimal lowerMedium = req.hasLowerBounds() ? req.lowerMidThreshold() : null;
+        BigDecimal upperMedium = req.hasUpperBounds() ? req.upperMidThreshold() : null;
         BigDecimal upperMax = req.hasUpperBounds() ? req.upperMaxThreshold() : null;
 
         Risk risk = new Risk(
@@ -77,23 +77,23 @@ public class RiskService {
         validateSelectedBounds(
                 req.hasUpperBounds(),
                 req.hasLowerBounds(),
-                req.upperMediumThreshold(),
+                req.upperMidThreshold(),
                 req.upperMaxThreshold(),
-                req.lowerMediumThreshold(),
-                req.lowerMaxThreshold()
+                req.lowerMidThreshold(),
+                req.lowerMinThreshold()
         );
         validateThresholdOrdering(
                 req.hasUpperBounds(),
                 req.hasLowerBounds(),
-                req.upperMediumThreshold(),
+                req.upperMidThreshold(),
                 req.upperMaxThreshold(),
-                req.lowerMediumThreshold(),
-                req.lowerMaxThreshold()
+                req.lowerMidThreshold(),
+                req.lowerMinThreshold()
         );
 
-        BigDecimal lowerMax = req.hasLowerBounds() ? req.lowerMaxThreshold() : null;
-        BigDecimal lowerMedium = req.hasLowerBounds() ? req.lowerMediumThreshold() : null;
-        BigDecimal upperMedium = req.hasUpperBounds() ? req.upperMediumThreshold() : null;
+        BigDecimal lowerMax = req.hasLowerBounds() ? req.lowerMinThreshold() : null;
+        BigDecimal lowerMedium = req.hasLowerBounds() ? req.lowerMidThreshold() : null;
+        BigDecimal upperMedium = req.hasUpperBounds() ? req.upperMidThreshold() : null;
         BigDecimal upperMax = req.hasUpperBounds() ? req.upperMaxThreshold() : null;
 
         Risk risk = getRisk(id);
@@ -162,17 +162,17 @@ public class RiskService {
         if (hasUpper
                 && upperMediumThreshold.compareTo(upperMaxThreshold) >= 0) {
             throw new IllegalArgumentException(
-                    "upperMediumThreshold must be less than upperMaxThreshold");
+                    "upperMidThreshold must be less than upperMaxThreshold");
         }
         if (hasLower
                 && lowerMediumThreshold.compareTo(lowerMaxThreshold) <= 0) {
             throw new IllegalArgumentException(
-                    "lowerMediumThreshold must be greater than lowerMaxThreshold");
+                    "lowerMidThreshold must be greater than lowerMinThreshold");
         }
         if (hasUpper && hasLower
                 && lowerMediumThreshold.compareTo(upperMediumThreshold) >= 0) {
             throw new IllegalArgumentException(
-                    "lowerMediumThreshold must be less than upperMediumThreshold");
+                    "lowerMidThreshold must be less than upperMidThreshold");
         }
     }
 }

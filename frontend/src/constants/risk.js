@@ -43,8 +43,8 @@ export function formatFrequency(risk) {
 }
 
 export function formatDirection(risk) {
-  const hasUpper = hasValue(risk?.upperMediumThreshold) && hasValue(risk?.upperMaxThreshold);
-  const hasLower = hasValue(risk?.lowerMediumThreshold) && hasValue(risk?.lowerMaxThreshold);
+  const hasUpper = hasValue(risk?.upperMidThreshold) && hasValue(risk?.upperMaxThreshold);
+  const hasLower = hasValue(risk?.lowerMidThreshold) && hasValue(risk?.lowerMinThreshold);
 
   if (hasUpper && hasLower) return 'Both higher and lower values can indicate risk';
   if (hasUpper) return 'Higher value means higher risk';
@@ -56,14 +56,14 @@ export function formatThresholds(risk) {
   if (!risk) return '-';
 
   const parts = [];
-  if (hasValue(risk.upperMediumThreshold) && hasValue(risk.upperMaxThreshold)) {
+  if (hasValue(risk.upperMidThreshold) && hasValue(risk.upperMaxThreshold)) {
     parts.push(
-      `Upper: medium >= ${risk.upperMediumThreshold}, high >= ${risk.upperMaxThreshold}`,
+      `Upper: medium >= ${risk.upperMidThreshold}, high >= ${risk.upperMaxThreshold}`,
     );
   }
-  if (hasValue(risk.lowerMediumThreshold) && hasValue(risk.lowerMaxThreshold)) {
+  if (hasValue(risk.lowerMidThreshold) && hasValue(risk.lowerMinThreshold)) {
     parts.push(
-      `Lower: medium <= ${risk.lowerMediumThreshold}, high <= ${risk.lowerMaxThreshold}`,
+      `Lower: medium <= ${risk.lowerMidThreshold}, high <= ${risk.lowerMinThreshold}`,
     );
   }
 

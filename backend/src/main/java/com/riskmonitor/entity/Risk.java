@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 @Entity
@@ -35,14 +36,14 @@ public class Risk {
     @Column(name = "measurement_unit", nullable = false, length = 50)
     private String measurementUnit;
 
-    @Column(name = "lower_max_threshold", precision = 19, scale = 4)
-    private BigDecimal lowerMaxThreshold;
+    @Column(name = "lower_min_threshold", precision = 19, scale = 4)
+    private BigDecimal lowerMinThreshold;
 
-    @Column(name = "lower_medium_threshold", precision = 19, scale = 4)
-    private BigDecimal lowerMediumThreshold;
+    @Column(name = "lower_mid_threshold", precision = 19, scale = 4)
+    private BigDecimal lowerMidThreshold;
 
-    @Column(name = "upper_medium_threshold", precision = 19, scale = 4)
-    private BigDecimal upperMediumThreshold;
+    @Column(name = "upper_mid_threshold", precision = 19, scale = 4)
+    private BigDecimal upperMidThreshold;
 
     @Column(name = "upper_max_threshold", precision = 19, scale = 4)
     private BigDecimal upperMaxThreshold;
@@ -67,9 +68,9 @@ public class Risk {
             Long timeIntervalValue,
             RiskPeriod timeIntervalUnit,
             String measurementUnit,
-            BigDecimal lowerMaxThreshold,
-            BigDecimal lowerMediumThreshold,
-            BigDecimal upperMediumThreshold,
+            BigDecimal lowerMinThreshold,
+            BigDecimal lowerMidThreshold,
+            BigDecimal upperMidThreshold,
             BigDecimal upperMaxThreshold,
             Instant validFrom,
             Instant validUntil
@@ -81,12 +82,12 @@ public class Risk {
         this.timeIntervalValue = timeIntervalValue;
         this.timeIntervalUnit = timeIntervalUnit;
         this.measurementUnit = measurementUnit;
-        this.lowerMaxThreshold = lowerMaxThreshold;
-        this.lowerMediumThreshold = lowerMediumThreshold;
-        this.upperMediumThreshold = upperMediumThreshold;
+        this.lowerMinThreshold = lowerMinThreshold;
+        this.lowerMidThreshold = lowerMidThreshold;
+        this.upperMidThreshold = upperMidThreshold;
         this.upperMaxThreshold = upperMaxThreshold;
-        this.validFrom = validFrom;
-        this.validUntil = validUntil;
+        this.validFrom = validFrom.truncatedTo(ChronoUnit.SECONDS);
+        this.validUntil = validUntil == null ? null : validUntil.truncatedTo(ChronoUnit.SECONDS);
         this.modifyDetails = ModifyDetails.createDetails();
         validateThresholds();
         validateValidityPeriod();
@@ -99,50 +100,52 @@ public class Risk {
         this.timeIntervalValue = modifiedRisk.timeIntervalValue();
         this.timeIntervalUnit = modifiedRisk.timeIntervalUnit();
         this.measurementUnit = modifiedRisk.measurementUnit();
-        this.lowerMaxThreshold = modifiedRisk.lowerMaxThreshold();
-        this.lowerMediumThreshold = modifiedRisk.lowerMediumThreshold();
-        this.upperMediumThreshold = modifiedRisk.upperMediumThreshold();
+        this.lowerMinThreshold = modifiedRisk.lowerMinThreshold();
+        this.lowerMidThreshold = modifiedRisk.lowerMidThreshold();
+        this.upperMidThreshold = modifiedRisk.upperMidThreshold();
         this.upperMaxThreshold = modifiedRisk.upperMaxThreshold();
-        this.validFrom = modifiedRisk.validFrom();
-        this.validUntil = modifiedRisk.validUntil();
+        this.validFrom = modifiedRisk.validFrom().truncatedTo(ChronoUnit.SECONDS);
+        this.validUntil = modifiedRisk.validUntil() == null
+                ? null
+                : modifiedRisk.validUntil().truncatedTo(ChronoUnit.SECONDS);
         validateThresholds();
         validateValidityPeriod();
         this.modifyDetails.update();
     }
 
     public void validateThresholds() {
-        boolean upperBandDefined = upperMediumThreshold != null && upperMaxThreshold != null;
-        boolean lowerBandDefined = lowerMediumThreshold != null && lowerMaxThreshold != null;
-        boolean upperBandHalfSet = (upperMediumThreshold == null) != (upperMaxThreshold == null);
-        boolean lowerBandHalfSet = (lowerMediumThreshold == null) != (lowerMaxThreshold == null);
+        boolean upperBandDefined = upperMidThreshold != null && upperMaxThreshold != null;
+        boolean lowerBandDefined = lowerMidThreshold != null && lowerMinThreshold != null;
+        boolean upperBandHalfSet = (upperMidThreshold == null) != (upperMaxThreshold == null);
+        boolean lowerBandHalfSet = (lowerMidThreshold == null) != (lowerMinThreshold == null);
 
         if (upperBandHalfSet) {
             throw new IllegalArgumentException(
-                    "Upper band is incomplete: both upperMediumThreshold and " +
+                    "Upper band is incomplete: both upperMidThreshold and " +
                             "upperMaxThreshold must be provided together");
         }
         if (lowerBandHalfSet) {
             throw new IllegalArgumentException(
-                    "Lower band is incomplete: both lowerMediumThreshold and " +
-                            "lowerMaxThreshold must be provided together");
+                    "Lower band is incomplete: both lowerMidThreshold and " +
+                            "lowerMinThreshold must be provided together");
         }
         if (!upperBandDefined && !lowerBandDefined) {
             throw new IllegalArgumentException(
                     "Risk must have at least one band defined (upper, lower, or both)");
         }
 
-        if (upperBandDefined && upperMediumThreshold.compareTo(upperMaxThreshold) >= 0) {
+        if (upperBandDefined && upperMidThreshold.compareTo(upperMaxThreshold) >= 0) {
             throw new IllegalArgumentException(
-                    "upperMediumThreshold must be less than upperMaxThreshold");
+                    "upperMidThreshold must be less than upperMaxThreshold");
         }
-        if (lowerBandDefined && lowerMaxThreshold.compareTo(lowerMediumThreshold) >= 0) {
+        if (lowerBandDefined && lowerMinThreshold.compareTo(lowerMidThreshold) >= 0) {
             throw new IllegalArgumentException(
-                    "lowerMaxThreshold must be less than lowerMediumThreshold");
+                    "lowerMinThreshold must be less than lowerMidThreshold");
         }
         if (upperBandDefined && lowerBandDefined
-                && lowerMediumThreshold.compareTo(upperMediumThreshold) >= 0) {
+                && lowerMidThreshold.compareTo(upperMidThreshold) >= 0) {
             throw new IllegalArgumentException(
-                    "lowerMediumThreshold must be less than upperMediumThreshold");
+                    "lowerMidThreshold must be less than upperMidThreshold");
         }
     }
 
@@ -162,9 +165,9 @@ public class Risk {
             Long timeIntervalValue,
             RiskPeriod timeIntervalUnit,
             String measurementUnit,
-            BigDecimal lowerMaxThreshold,
-            BigDecimal lowerMediumThreshold,
-            BigDecimal upperMediumThreshold,
+            BigDecimal lowerMinThreshold,
+            BigDecimal lowerMidThreshold,
+            BigDecimal upperMidThreshold,
             BigDecimal upperMaxThreshold,
             Instant validFrom,
             Instant validUntil
