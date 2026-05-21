@@ -16,6 +16,9 @@ public class Risk {
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
+    @Column(name = "google_user_id")
+    private String googleUserId;
+
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
@@ -62,6 +65,7 @@ public class Risk {
     }
 
     public Risk(
+            String googleUserId,
             String name,
             String category,
             String description,
@@ -76,6 +80,7 @@ public class Risk {
             Instant validUntil
     ) {
         this.id = UUID.randomUUID();
+        this.googleUserId = googleUserId;
         this.name = name;
         this.category = category;
         this.description = description;
