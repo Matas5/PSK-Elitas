@@ -1,6 +1,15 @@
 async function parseError(response, fallback) {
     const text = await response.text().catch(() => "");
-    return new Error(text || `${fallback} (${response.status})`);
+    if (text) {
+        try {
+            const body = JSON.parse(text);
+            return new Error(body.message || body.error || text);
+        } catch {
+            return new Error(text);
+        }
+    }
+
+    return new Error(`${fallback} (${response.status})`);
 }
 
 function authHeaders() {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -7,8 +7,10 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 
 import { createRiskValues } from '../api/riskValuesApi';
+import { formatFrequency } from '../constants/risk';
 
 function toLocalDateTimeInput(date) {
   const pad = (n) => String(n).padStart(2, '0');
@@ -16,6 +18,55 @@ function toLocalDateTimeInput(date) {
     `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
     `T${pad(date.getHours())}:${pad(date.getMinutes())}`
   );
+}
+
+function formatDateTime(value) {
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(value);
+}
+
+function roundToNearest(value, step) {
+  return Math.round(value / step) * step;
+}
+
+function getSuggestedDateTime(risk, value) {
+  if (!value) return null;
+
+  const date = new Date(value);
+  const step = Number(risk?.timeIntervalValue);
+  const unit = risk?.timeIntervalUnit;
+
+  if (Number.isNaN(date.getTime()) || !Number.isFinite(step) || step <= 0) {
+    return null;
+  }
+
+  const suggestion = new Date(date);
+
+  if (unit === 'MINUTE') {
+    suggestion.setSeconds(0, 0);
+    suggestion.setMinutes(roundToNearest(suggestion.getMinutes(), step));
+    return suggestion;
+  }
+
+  if (unit === 'HOUR') {
+    const hour = suggestion.getHours();
+    const minuteOffset = suggestion.getMinutes() / 60;
+    suggestion.setHours(roundToNearest(hour + minuteOffset, step), 0, 0, 0);
+    return suggestion;
+  }
+
+  if (unit === 'DAY') {
+    const hourOffset = suggestion.getHours() + suggestion.getMinutes() / 60;
+    if (hourOffset >= 12) {
+      suggestion.setDate(suggestion.getDate() + 1);
+    }
+    suggestion.setHours(0, 0, 0, 0);
+    return suggestion;
+  }
+
+  return null;
 }
 
 export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
@@ -26,6 +77,12 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const suggestedDateTime = useMemo(
+    () => getSuggestedDateTime(risk, form.recordedAt),
+    [risk, form.recordedAt],
+  );
+  const suggestedInputValue = suggestedDateTime ? toLocalDateTimeInput(suggestedDateTime) : '';
+  const showSuggestion = suggestedInputValue && suggestedInputValue !== form.recordedAt;
 
   const update = (field) => (event) => {
     const value = event.target.value;
@@ -92,6 +149,16 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
     onClose();
   };
 
+  const applySuggestedDateTime = () => {
+    setForm((prev) => ({ ...prev, recordedAt: suggestedInputValue }));
+    setErrors((prev) => {
+      if (!prev.recordedAt) return prev;
+      const next = { ...prev };
+      delete next.recordedAt;
+      return next;
+    });
+  };
+
   return (
     <Dialog
       open
@@ -125,6 +192,21 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
             helperText={errors.recordedAt || ' '}
             InputLabelProps={{ shrink: true }}
           />
+
+          {showSuggestion && (
+            <Stack
+              direction={{ xs: 'column', sm: 'row' }}
+              spacing={1.5}
+              alignItems={{ xs: 'stretch', sm: 'center' }}
+            >
+              <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
+                Suggested {formatFrequency(risk).toLowerCase()}: {formatDateTime(suggestedDateTime)}
+              </Typography>
+              <Button size="small" onClick={applySuggestedDateTime}>
+                Use suggested time
+              </Button>
+            </Stack>
+          )}
 
           {submitError && <Alert severity="error">{submitError}</Alert>}
         </Stack>
