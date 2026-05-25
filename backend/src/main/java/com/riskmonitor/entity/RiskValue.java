@@ -1,13 +1,22 @@
 package com.riskmonitor.entity;
 
-import jakarta.persistence.*;
-import lombok.Getter;
-import org.hibernate.annotations.OnDelete;
-import org.hibernate.annotations.OnDeleteAction;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
+
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 
 @Entity
 @Table(
@@ -17,7 +26,6 @@ import java.util.UUID;
                 columnNames = {"risk_id", "recorded_at"}
         )
 )
-@Getter
 public class RiskValue {
 
     @Id
@@ -38,6 +46,10 @@ public class RiskValue {
     @Embedded
     private ModifyDetails modifyDetails;
 
+    @Version
+    @Column(name = "version")
+    private Long version;
+
     protected RiskValue() {
         // JPA
     }
@@ -49,4 +61,12 @@ public class RiskValue {
         this.recordedAt = recordedAt;
         this.modifyDetails = ModifyDetails.createDetails();
     }
+
+    // Getters
+    public UUID getId() { return id; }
+    public Risk getRisk() { return risk; }
+    public BigDecimal getValue() { return value; }
+    public Instant getRecordedAt() { return recordedAt; }
+    public ModifyDetails getModifyDetails() { return modifyDetails; }
+    public Long getVersion() { return version; }
 }

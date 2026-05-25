@@ -1,5 +1,19 @@
 async function parseError(response, fallback) {
     const text = await response.text().catch(() => "");
+    
+    // For 409 Conflict, try to parse JSON
+    if (response.status === 409) {
+        try {
+            const data = JSON.parse(text);
+            const error = new Error(data.message || fallback);
+            error.status = response.status;
+            error.data = data;
+            return error;
+        } catch (e) {
+            // Fall through to text error
+        }
+    }
+    
     return new Error(text || `${fallback} (${response.status})`);
 }
 

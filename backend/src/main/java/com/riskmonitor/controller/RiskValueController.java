@@ -1,24 +1,32 @@
 package com.riskmonitor.controller;
 
+import java.util.List;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.riskmonitor.dto.riskvalue.RiskValueStruct.CreateBatchReq;
 import com.riskmonitor.dto.riskvalue.RiskValueStruct.Resp;
 import com.riskmonitor.service.RiskValueService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/risks/{riskId}/values")
 @RequiredArgsConstructor
-@Slf4j
 public class RiskValueController {
 
+    private static final Logger log = LoggerFactory.getLogger(RiskValueController.class);
     private final RiskValueService riskValueService;
 
     @GetMapping

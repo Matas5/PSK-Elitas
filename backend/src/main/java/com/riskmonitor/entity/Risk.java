@@ -1,15 +1,22 @@
 package com.riskmonitor.entity;
-import com.riskmonitor.dto.risk.RiskStruct.RiskPeriod;
-import jakarta.persistence.*;
-import lombok.Getter;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
+import com.riskmonitor.dto.risk.RiskStruct.RiskPeriod;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.persistence.Version;
+
 @Entity
 @Table(name = "risk")
-@Getter
 public class Risk {
 
     @Id
@@ -59,6 +66,10 @@ public class Risk {
 
     @Embedded
     private ModifyDetails modifyDetails;
+
+    @Version
+    @Column(name = "version")
+    private Long version;
 
     protected Risk() {
         // JPA
@@ -162,6 +173,24 @@ public class Risk {
             throw new IllegalArgumentException("validUntil must be after validFrom");
         }
     }
+
+    // Getters
+    public UUID getId() { return id; }
+    public String getGoogleUserId() { return googleUserId; }
+    public String getName() { return name; }
+    public String getCategory() { return category; }
+    public String getDescription() { return description; }
+    public Long getTimeIntervalValue() { return timeIntervalValue; }
+    public RiskPeriod getTimeIntervalUnit() { return timeIntervalUnit; }
+    public String getMeasurementUnit() { return measurementUnit; }
+    public BigDecimal getLowerMinThreshold() { return lowerMinThreshold; }
+    public BigDecimal getLowerMidThreshold() { return lowerMidThreshold; }
+    public BigDecimal getUpperMidThreshold() { return upperMidThreshold; }
+    public BigDecimal getUpperMaxThreshold() { return upperMaxThreshold; }
+    public Instant getValidFrom() { return validFrom; }
+    public Instant getValidUntil() { return validUntil; }
+    public ModifyDetails getModifyDetails() { return modifyDetails; }
+    public Long getVersion() { return version; }
 
     public record UpdateRiskFields(
             String name,

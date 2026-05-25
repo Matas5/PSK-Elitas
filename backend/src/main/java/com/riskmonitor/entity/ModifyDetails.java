@@ -1,12 +1,11 @@
 package com.riskmonitor.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Embeddable;
-import lombok.Getter;
 import java.time.Instant;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+
 @Embeddable
-@Getter
 public class ModifyDetails {
 
     @Column(name = "created_by", nullable = false, updatable = false, length = 100)
@@ -40,4 +39,10 @@ public class ModifyDetails {
         this.modifiedBy = AuditContext.currentUser();
         this.modifiedAt = Instant.now();
     }
+
+    // Getters
+    public String getCreatedBy() { return createdBy; }
+    public Instant getCreatedAt() { return createdAt; }
+    public String getModifiedBy() { return modifiedBy; }
+    public Instant getModifiedAt() { return modifiedAt; }
 }
