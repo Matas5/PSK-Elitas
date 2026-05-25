@@ -18,18 +18,59 @@ function toLocalDateTimeInput(date) {
   );
 }
 
-export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
-  const [form, setForm] = useState(() => ({
+function getAnchorTimeFromRisk(risk) {
+  if (!risk?.validFrom) return null;
+  const anchorDate = new Date(risk.validFrom);
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(anchorDate.getUTCHours())}:${pad(anchorDate.getUTCMinutes())}`;
+}
+
+function initializeFormWithAnchor(risk) {
+  const anchorTime = getAnchorTimeFromRisk(risk);
+  if (!anchorTime) {
+    console.log('LogRiskValueDialog: No anchor time found');
+    return {
+      value: '',
+      recordedAt: toLocalDateTimeInput(new Date()),
+    };
+  }
+  
+  console.log('LogRiskValueDialog: Initializing with anchor time:', anchorTime);
+  // Use today's date with the anchor's time (in UTC)
+  // For the datetime-local input, we'll show the UTC time directly
+  // and convert properly when submitting
+  const today = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const [hours, minutes] = anchorTime.split(':');
+  
+  const dateStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+  
+  return {
     value: '',
-    recordedAt: toLocalDateTimeInput(new Date()),
-  }));
+    recordedAt: `${dateStr}T${hours}:${minutes}`,
+    anchorTime,
+  };
+}
+
+export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
+  const [form, setForm] = useState(() => initializeFormWithAnchor(risk));
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
   const update = (field) => (event) => {
     const value = event.target.value;
-    setForm((prev) => ({ ...prev, [field]: value }));
+    
+    // If updating recordedAt and we have an anchor time, preserve the anchor time
+    if (field === 'recordedAt' && form.anchorTime) {
+      const [hours, minutes] = form.anchorTime.split(':');
+      const datePart = value.split('T')[0];
+      const newValue = `${datePart}T${hours}:${minutes}`;
+      setForm((prev) => ({ ...prev, [field]: newValue }));
+    } else {
+      setForm((prev) => ({ ...prev, [field]: value }));
+    }
+    
     setErrors((prev) => {
       if (!prev[field]) return prev;
       const next = { ...prev };
@@ -66,11 +107,32 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
       return;
     }
 
+    // Extract date from input and use anchor time (in UTC)
+    let recordedAtIso = form.recordedAt;
+    if (form.anchorTime) {
+      const [datePart] = form.recordedAt.split('T');
+      const [hours, minutes] = form.anchorTime.split(':');
+      const [year, month, day] = datePart.split('-');
+      // Create a UTC date with the anchor hours
+      const utcDate = new Date(Date.UTC(
+        parseInt(year),
+        parseInt(month) - 1,
+        parseInt(day),
+        parseInt(hours),
+        parseInt(minutes)
+      ));
+      recordedAtIso = utcDate.toISOString();
+      console.log('LogRiskValueDialog: Sending recordedAt =', recordedAtIso, '(from anchor time:', form.anchorTime, ')');
+    } else {
+      recordedAtIso = new Date(form.recordedAt).toISOString();
+      console.log('LogRiskValueDialog: No anchor time, sending recordedAt =', recordedAtIso);
+    }
+
     const body = {
       entries: [
         {
           value: Number(form.value),
-          recordedAt: new Date(form.recordedAt).toISOString(),
+          recordedAt: recordedAtIso,
         },
       ],
     };
@@ -122,7 +184,7 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
             value={form.recordedAt}
             onChange={update('recordedAt')}
             error={Boolean(errors.recordedAt)}
-            helperText={errors.recordedAt || ' '}
+            helperText={errors.recordedAt || (form.anchorTime ? `Time is locked to ${form.anchorTime} UTC (risk anchor)` : ' ')}
             InputLabelProps={{ shrink: true }}
           />
 
