@@ -1,20 +1,22 @@
 async function parseError(response, fallback) {
     const text = await response.text().catch(() => "");
-    
-    // For 409 Conflict, try to parse JSON
-    if (response.status === 409) {
+
+    let data = null;
+    let message = text || `${fallback} (${response.status})`;
+
+    if (text) {
         try {
-            const data = JSON.parse(text);
-            const error = new Error(data.message || fallback);
-            error.status = response.status;
-            error.data = data;
-            return error;
-        } catch (e) {
-            // Fall through to text error
+            data = JSON.parse(text);
+            message = data.message || data.error || text;
+        } catch {
+            message = text;
         }
     }
-    
-    return new Error(text || `${fallback} (${response.status})`);
+
+    const error = new Error(message);
+    error.status = response.status;
+    if (data) error.data = data;
+    return error;
 }
 
 function authHeaders() {

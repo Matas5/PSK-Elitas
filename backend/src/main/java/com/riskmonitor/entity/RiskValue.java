@@ -62,6 +62,12 @@ public class RiskValue {
         this.modifyDetails = ModifyDetails.createDetails();
     }
 
+    public void update(BigDecimal value, Instant recordedAt) {
+        this.value = value;
+        this.recordedAt = recordedAt;
+        this.modifyDetails.update();
+    }
+
     // Getters
     public UUID getId() { return id; }
     public Risk getRisk() { return risk; }
