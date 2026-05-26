@@ -20,10 +20,10 @@ public final class AuthStruct {
     ) {}
 
     public record LocalLoginReq(
-            @NotBlank @Size(min = 3, max = 64)
+            @NotBlank @Size(max = 64)
             String username,
 
-            @NotBlank @Size(min = 8, max = 128)
+            @NotBlank @Size(max = 128)
             String password
     ) {}
 

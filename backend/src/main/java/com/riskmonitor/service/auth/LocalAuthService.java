@@ -14,6 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class LocalAuthService {
 
+    private static final String INVALID_CREDENTIALS_MESSAGE =
+            "Invalid username or password. Create an account first if you do not have one.";
+
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
@@ -30,9 +33,9 @@ public class LocalAuthService {
     @Transactional(readOnly = true)
     public LocalLoginResp login(LocalLoginReq req) {
         AppUser user = userRepository.findByUsername(req.username().trim())
-                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+                .orElseThrow(() -> new IllegalArgumentException(INVALID_CREDENTIALS_MESSAGE));
         if (!passwordEncoder.matches(req.password(), user.getPasswordHash())) {
-            throw new IllegalArgumentException("Invalid credentials");
+            throw new IllegalArgumentException(INVALID_CREDENTIALS_MESSAGE);
         }
         return LocalLoginResp.from(user);
     }
