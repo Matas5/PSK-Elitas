@@ -28,6 +28,39 @@ function hasValue(value) {
   return value !== null && value !== undefined && value !== '';
 }
 
+function unitOf(arg) {
+  return typeof arg === 'string' ? arg : arg?.timeIntervalUnit;
+}
+
+export function needsSeconds(riskOrUnit) {
+  return unitOf(riskOrUnit) === 'SECOND';
+}
+
+export function formatRiskDateTime(value, riskOrUnit) {
+  if (!value) return '-';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '-';
+  return new Intl.DateTimeFormat(undefined, {
+    dateStyle: 'medium',
+    timeStyle: needsSeconds(riskOrUnit) ? 'medium' : 'short',
+  }).format(date);
+}
+
+export function toInputDateTime(value, riskOrUnit) {
+  if (!value) return '';
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return '';
+  const pad = (n) => String(n).padStart(2, '0');
+  const base =
+    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return needsSeconds(riskOrUnit) ? `${base}:${pad(date.getSeconds())}` : base;
+}
+
+export function dateInputProps(riskOrUnit) {
+  return needsSeconds(riskOrUnit) ? { step: 1 } : undefined;
+}
+
 function formatUnitLabel(value, count) {
   const unit = TIME_INTERVAL_UNITS.find((u) => u.value === value);
   const label = unit ? unit.label.toLowerCase() : String(value || '').toLowerCase();
@@ -50,6 +83,37 @@ export function formatDirection(risk) {
   if (hasUpper) return 'Higher value means higher risk';
   if (hasLower) return 'Lower value means higher risk';
   return '-';
+}
+
+export const RISK_LEVELS = Object.freeze({
+  LOW: { label: 'Low', color: '#2e7d32' },
+  MEDIUM: { label: 'Medium', color: '#ed6c02' },
+  HIGH: { label: 'High', color: '#d32f2f' },
+});
+
+export function classifyRiskLevel(risk, value) {
+  const num = Number(value);
+  if (!risk || !Number.isFinite(num)) return 'LOW';
+
+  const order = { LOW: 0, MEDIUM: 1, HIGH: 2 };
+  let level = 'LOW';
+  const promote = (next) => {
+    if (order[next] > order[level]) level = next;
+  };
+
+  if (hasValue(risk.upperMaxThreshold) && num >= Number(risk.upperMaxThreshold)) {
+    promote('HIGH');
+  } else if (hasValue(risk.upperMidThreshold) && num >= Number(risk.upperMidThreshold)) {
+    promote('MEDIUM');
+  }
+
+  if (hasValue(risk.lowerMinThreshold) && num <= Number(risk.lowerMinThreshold)) {
+    promote('HIGH');
+  } else if (hasValue(risk.lowerMidThreshold) && num <= Number(risk.lowerMidThreshold)) {
+    promote('MEDIUM');
+  }
+
+  return level;
 }
 
 export function formatThresholds(risk) {

@@ -57,6 +57,18 @@ export async function listRisks() {
     return response.json();
 }
 
+export async function getRisk(id) {
+    const response = await fetch(`/api/risks/${id}`, {
+        headers: authHeaders()
+    });
+
+    if (!response.ok) {
+        throw await parseError(response, "Load risk failed");
+    }
+
+    return response.json();
+}
+
 export async function createRisk(body) {
     const response = await fetch("/api/risks", {
         method: "POST",

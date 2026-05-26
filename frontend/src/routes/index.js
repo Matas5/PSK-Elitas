@@ -4,6 +4,7 @@ export const ROUTES = Object.freeze({
   REGISTER: '/register',
   DASHBOARD: '/dashboard',
   RISKS: '/risks',
+  RISK_GRAPH: '/risks/:riskId/graph',
   REPORTS: '/reports',
   PROFILE: '/profile',
 });

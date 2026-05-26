@@ -12,11 +12,13 @@ import Typography from '@mui/material/Typography';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import ShowChartOutlinedIcon from '@mui/icons-material/ShowChartOutlined';
 import RiskValueList from './RiskValueList';
 
 import {
   formatDirection,
   formatFrequency,
+  formatRiskDateTime,
 } from '../constants/risk';
 
 function hasValue(value) {
@@ -25,17 +27,6 @@ function hasValue(value) {
 
 function displayValue(value) {
   return hasValue(value) ? String(value) : '-';
-}
-
-function formatDateTime(value) {
-  if (!value) return '-';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '-';
-
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(date);
 }
 
 function formatMediumThreshold(risk) {
@@ -80,6 +71,7 @@ export default function RiskDetailsDialog({
   onEdit,
   onDelete,
   onAddValue,
+  onViewGraph,
   deleting = false,
   deleteError = null,
 }) {
@@ -128,16 +120,13 @@ export default function RiskDetailsDialog({
           <Divider />
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <ReadOnlyField label="Valid from" value={formatDateTime(risk.validFrom)} />
-            <ReadOnlyField label="Valid until" value={formatDateTime(risk.validUntil)} />
+            <ReadOnlyField label="Valid from" value={formatRiskDateTime(risk.validFrom, risk)} />
+            <ReadOnlyField label="Valid until" value={formatRiskDateTime(risk.validUntil, risk)} />
           </Stack>
 
           <Divider />
 
-          <RiskValueList
-              riskId={risk.id}
-              measurementUnit={risk.measurementUnit}
-          />
+          <RiskValueList risk={risk} />
 
           {deleteError && <Alert severity="error">{deleteError}</Alert>}
         </Stack>
@@ -151,6 +140,13 @@ export default function RiskDetailsDialog({
           disabled={deleting}
         >
           Add value
+        </Button>
+        <Button
+          startIcon={<ShowChartOutlinedIcon />}
+          onClick={onViewGraph}
+          disabled={deleting}
+        >
+          View graph
         </Button>
         <Button startIcon={<EditOutlinedIcon />} onClick={onEdit} disabled={deleting}>
           Edit
