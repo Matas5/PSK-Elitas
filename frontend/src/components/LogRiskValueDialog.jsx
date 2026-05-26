@@ -20,6 +20,38 @@ function toLocalDateTimeInput(date) {
   );
 }
 
+function getAnchorTimeFromRisk(risk) {
+  if (!risk?.validFrom) return null;
+
+  const anchorDate = new Date(risk.validFrom);
+  if (Number.isNaN(anchorDate.getTime())) return null;
+
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${pad(anchorDate.getUTCHours())}:${pad(anchorDate.getUTCMinutes())}`;
+}
+
+function initializeFormWithAnchor(risk) {
+  const anchorTime = getAnchorTimeFromRisk(risk);
+  if (!anchorTime) {
+    return {
+      value: '',
+      recordedAt: toLocalDateTimeInput(new Date()),
+      anchorTime: null,
+    };
+  }
+
+  const today = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  const [hours, minutes] = anchorTime.split(':');
+  const dateStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
+
+  return {
+    value: '',
+    recordedAt: `${dateStr}T${hours}:${minutes}`,
+    anchorTime,
+  };
+}
+
 function formatDateTime(value) {
   return new Intl.DateTimeFormat(undefined, {
     dateStyle: 'medium',
@@ -69,11 +101,15 @@ function getSuggestedDateTime(risk, value) {
   return null;
 }
 
+function applyAnchorTime(value, anchorTime) {
+  if (!anchorTime || !value.includes('T')) return value;
+
+  const datePart = value.split('T')[0];
+  return `${datePart}T${anchorTime}`;
+}
+
 export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
-  const [form, setForm] = useState(() => ({
-    value: '',
-    recordedAt: toLocalDateTimeInput(new Date()),
-  }));
+  const [form, setForm] = useState(() => initializeFormWithAnchor(risk));
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
@@ -82,11 +118,15 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
     [risk, form.recordedAt],
   );
   const suggestedInputValue = suggestedDateTime ? toLocalDateTimeInput(suggestedDateTime) : '';
-  const showSuggestion = suggestedInputValue && suggestedInputValue !== form.recordedAt;
+  const showSuggestion = !form.anchorTime && suggestedInputValue && suggestedInputValue !== form.recordedAt;
 
   const update = (field) => (event) => {
     const value = event.target.value;
-    setForm((prev) => ({ ...prev, [field]: value }));
+    setForm((prev) => ({
+      ...prev,
+      [field]: field === 'recordedAt' ? applyAnchorTime(value, prev.anchorTime) : value,
+    }));
+
     setErrors((prev) => {
       if (!prev[field]) return prev;
       const next = { ...prev };
@@ -123,11 +163,25 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
       return;
     }
 
+    const recordedAtIso = form.anchorTime ? (() => {
+      const [datePart] = form.recordedAt.split('T');
+      const [hours, minutes] = form.anchorTime.split(':');
+      const [year, month, day] = datePart.split('-');
+      const utcDate = new Date(Date.UTC(
+        Number(year),
+        Number(month) - 1,
+        Number(day),
+        Number(hours),
+        Number(minutes),
+      ));
+      return utcDate.toISOString();
+    })() : new Date(form.recordedAt).toISOString();
+
     const body = {
       entries: [
         {
           value: Number(form.value),
-          recordedAt: new Date(form.recordedAt).toISOString(),
+          recordedAt: recordedAtIso,
         },
       ],
     };
@@ -189,7 +243,7 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
             value={form.recordedAt}
             onChange={update('recordedAt')}
             error={Boolean(errors.recordedAt)}
-            helperText={errors.recordedAt || ' '}
+            helperText={errors.recordedAt || (form.anchorTime ? `Time is locked to ${form.anchorTime} UTC (risk anchor)` : ' ')}
             InputLabelProps={{ shrink: true }}
           />
 

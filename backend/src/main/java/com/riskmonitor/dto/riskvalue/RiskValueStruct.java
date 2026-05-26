@@ -1,15 +1,16 @@
 package com.riskmonitor.dto.riskvalue;
 
-import com.riskmonitor.entity.RiskValue;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
-
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+
+import com.riskmonitor.entity.RiskValue;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 
 public final class RiskValueStruct {
 
@@ -45,7 +46,8 @@ public final class RiskValueStruct {
             BigDecimal value,
             Instant recordedAt,
             String createdBy,
-            Instant createdAt
+            Instant createdAt,
+            Long version
     ) {
         public static Resp from(RiskValue riskValue) {
             var modifyDetails = riskValue.getModifyDetails();
@@ -55,7 +57,8 @@ public final class RiskValueStruct {
                     riskValue.getValue(),
                     riskValue.getRecordedAt(),
                     modifyDetails.getCreatedBy(),
-                    modifyDetails.getCreatedAt()
+                    modifyDetails.getCreatedAt(),
+                    riskValue.getVersion()
             );
         }
     }
