@@ -5,6 +5,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+
 import com.riskmonitor.entity.RiskValue;
 
 import jakarta.validation.Valid;
@@ -59,6 +61,24 @@ public final class RiskValueStruct {
                     modifyDetails.getCreatedBy(),
                     modifyDetails.getCreatedAt(),
                     riskValue.getVersion()
+            );
+        }
+    }
+
+    public record PageResp<T>(
+            List<T> content,
+            long totalElements,
+            int totalPages,
+            int page,
+            int size
+    ) {
+        public static PageResp<Resp> from(Page<RiskValue> values) {
+            return new PageResp<>(
+                    values.getContent().stream().map(Resp::from).toList(),
+                    values.getTotalElements(),
+                    values.getTotalPages(),
+                    values.getNumber(),
+                    values.getSize()
             );
         }
     }

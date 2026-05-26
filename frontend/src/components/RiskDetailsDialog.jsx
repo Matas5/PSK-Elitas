@@ -1,3 +1,4 @@
+import { Link as RouterLink } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -12,12 +13,12 @@ import Typography from '@mui/material/Typography';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import RiskValueList from './RiskValueList';
 
 import {
   formatDirection,
   formatFrequency,
 } from '../constants/risk';
+import { ROUTES } from '../routes';
 
 function hasValue(value) {
   return value !== null && value !== undefined && value !== '';
@@ -132,18 +133,18 @@ export default function RiskDetailsDialog({
             <ReadOnlyField label="Valid until" value={formatDateTime(risk.validUntil)} />
           </Stack>
 
-          <Divider />
-
-          <RiskValueList
-              riskId={risk.id}
-              measurementUnit={risk.measurementUnit}
-          />
-
           {deleteError && <Alert severity="error">{deleteError}</Alert>}
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose} disabled={deleting}>Close</Button>
+        <Button
+          component={RouterLink}
+          to={`${ROUTES.RISK_VALUES}?riskId=${risk.id}`}
+          disabled={deleting}
+        >
+          View all values
+        </Button>
         <Button
           variant="contained"
           startIcon={<AddOutlinedIcon />}
