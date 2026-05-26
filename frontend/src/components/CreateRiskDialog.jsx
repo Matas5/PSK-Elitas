@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, Fragment } from 'react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -13,6 +13,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 import { createRisk, updateRisk } from '../api/risksApi';
+import ConflictDialog from './ConflictDialog';
 import {
   TIME_INTERVAL_UNITS,
   RISK_DIRECTIONS,
@@ -82,6 +83,7 @@ function riskToForm(risk) {
     return {
       ...INITIAL_STATE,
       validFrom: toLocalDateTimeInput(new Date()),
+      version: null,
     };
   }
 
@@ -99,6 +101,7 @@ function riskToForm(risk) {
     lowerMin: hasValue(risk.lowerMinThreshold) ? String(risk.lowerMinThreshold) : '',
     validFrom: toDateTimeInput(risk.validFrom),
     validUntil: toDateTimeInput(risk.validUntil),
+    version: risk.version,
   };
 }
 
@@ -133,6 +136,7 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [conflictData, setConflictData] = useState(null);
 
   const update = (field) => (event) => {
     const value = event.target.value;
@@ -265,6 +269,7 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
       lowerMinThreshold: hasLower ? parseDecimal(form.lowerMin) : null,
       validFrom: new Date(form.validFrom).toISOString(),
       validUntil: form.validUntil ? new Date(form.validUntil).toISOString() : null,
+      ...(isEdit && { version: form.version }),
     };
 
     try {
@@ -278,6 +283,11 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
       }
       onClose();
     } catch (err) {
+      // Check for optimistic locking conflict (HTTP 409)
+      if (err.status === 409 && err.data?.currentData) {
+        setConflictData(err.data);
+        return;
+      }
       setSubmitError(err.message || `Failed to ${isEdit ? 'update' : 'create'} risk.`);
     } finally {
       setSubmitting(false);
@@ -289,16 +299,38 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
     onClose();
   };
 
+  const handleConflictReload = () => {
+    // Reload from the server version
+    const serverRisk = conflictData.currentData;
+    setForm(riskToForm(serverRisk));
+    setConflictData(null);
+    setSubmitError(null);
+  };
+
+  const handleConflictOverwrite = async () => {
+    // Update version to server's version and retry
+    setForm((prev) => ({ ...prev, version: conflictData.currentVersion }));
+    setConflictData(null);
+    
+    // Retry the submit after updating the version
+    // We need to trigger a submit with the new version
+    setTimeout(() => {
+      const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+      document.querySelector('form')?.dispatchEvent(submitEvent);
+    }, 0);
+  };
+
   return (
-    <Dialog
-      open
-      onClose={handleClose}
-      maxWidth="sm"
-      fullWidth
-      component="form"
-      onSubmit={handleSubmit}
-      noValidate
-    >
+    <Fragment>
+      <Dialog
+        open
+        onClose={handleClose}
+        maxWidth="sm"
+        fullWidth
+        component="form"
+        onSubmit={handleSubmit}
+        noValidate
+      >
       <DialogTitle>{isEdit ? 'Edit risk' : 'Create risk'}</DialogTitle>
       <DialogContent dividers>
         <Stack spacing={2.5}>
@@ -511,6 +543,17 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
             : `${isEdit ? 'Save changes' : 'Create risk'}`}
         </Button>
       </DialogActions>
-    </Dialog>
+      </Dialog>
+
+      <ConflictDialog
+        open={Boolean(conflictData)}
+        resourceName="risk"
+        serverData={conflictData?.currentData}
+        onReload={handleConflictReload}
+        onOverwrite={handleConflictOverwrite}
+        onClose={() => setConflictData(null)}
+      />
+    </Fragment>
   );
 }
+
