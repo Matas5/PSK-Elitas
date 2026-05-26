@@ -31,6 +31,14 @@ public final class RiskValueStruct {
             List<EntryReq> entries
     ) {}
 
+    public record UpdateReq(
+            @NotNull
+            BigDecimal value,
+
+            @NotNull
+            Instant recordedAt
+    ) {}
+
     public record Resp(
             UUID id,
             UUID riskId,

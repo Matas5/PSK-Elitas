@@ -1,8 +1,8 @@
 package com.riskmonitor.service;
 
-import com.riskmonitor.dto.risk.RiskStruct.RiskPeriod;
 import com.riskmonitor.dto.riskvalue.RiskValueStruct.CreateBatchReq;
 import com.riskmonitor.dto.riskvalue.RiskValueStruct.EntryReq;
+import com.riskmonitor.dto.riskvalue.RiskValueStruct.UpdateReq;
 import com.riskmonitor.entity.Risk;
 import com.riskmonitor.entity.RiskValue;
 import com.riskmonitor.repository.RiskRepository;
@@ -12,9 +12,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -53,12 +50,33 @@ public class RiskValueService {
                         "Entry " + i + ": duplicate recordedAt within batch (" + recordedAt + ")");
             }
             validateWithinValidityWindow(risk, recordedAt, i);
-            validateOnGrid(risk, recordedAt, i);
 
             toSave.add(new RiskValue(risk, entry.value(), recordedAt));
         }
 
         return riskValueRepository.saveAll(toSave);
+    }
+
+    @Transactional
+    public RiskValue updateValue(UUID riskId, UUID valueId, UpdateReq request) {
+        RiskValue riskValue = getValueForRisk(riskId, valueId);
+        validateWithinValidityWindow(riskValue.getRisk(), request.recordedAt(), 0);
+        riskValue.update(request.value(), request.recordedAt());
+        return riskValueRepository.save(riskValue);
+    }
+
+    @Transactional
+    public void deleteValue(UUID riskId, UUID valueId) {
+        RiskValue riskValue = getValueForRisk(riskId, valueId);
+        riskValueRepository.delete(riskValue);
+    }
+
+    private RiskValue getValueForRisk(UUID riskId, UUID valueId) {
+        if (!riskRepository.existsById(riskId)) {
+            throw new IllegalArgumentException("Risk not found: " + riskId);
+        }
+        return riskValueRepository.findByIdAndRiskId(valueId, riskId)
+                .orElseThrow(() -> new IllegalArgumentException("Risk value not found: " + valueId));
     }
 
     private void validateWithinValidityWindow(Risk risk, Instant recordedAt, int index) {
@@ -70,45 +88,5 @@ public class RiskValueService {
             throw new IllegalArgumentException(
                     "Entry " + index + ": recordedAt is after risk validUntil");
         }
-    }
-
-    private void validateOnGrid(Risk risk, Instant recordedAt, int index) {
-        RiskPeriod unit = risk.getTimeIntervalUnit();
-        long step = risk.getTimeIntervalValue();
-        Instant validFrom = risk.getValidFrom();
-
-        boolean aligned = switch (unit) {
-            case SECOND  -> alignedFixed(validFrom, recordedAt, step * 1_000L);
-            case MINUTE  -> alignedFixed(validFrom, recordedAt, step * 60_000L);
-            case HOUR    -> alignedFixed(validFrom, recordedAt, step * 3_600_000L);
-            case DAY     -> alignedCalendar(validFrom, recordedAt, ChronoUnit.DAYS, step);
-            case MONTH   -> alignedCalendar(validFrom, recordedAt, ChronoUnit.MONTHS, step);
-            case QUARTER -> alignedCalendar(validFrom, recordedAt, ChronoUnit.MONTHS, step * 3L);
-            case YEAR    -> alignedCalendar(validFrom, recordedAt, ChronoUnit.YEARS, step);
-        };
-
-        if (!aligned) {
-            throw new IllegalArgumentException(
-                    "Entry " + index + ": recordedAt does not align with the risk's "
-                            + step + " " + unit + " interval anchored at " + validFrom);
-        }
-    }
-
-    private boolean alignedFixed(Instant validFrom, Instant recordedAt, long stepMillis) {
-        long delta = recordedAt.toEpochMilli() - validFrom.toEpochMilli();
-        return delta >= 0 && delta % stepMillis == 0;
-    }
-
-    // Calendar alignment in UTC. The plus(diff, unit).equals(to) check guards against
-    // day-of-month drift (e.g., Jan 31 + 1 month = Feb 28 in Java, but Feb 28 does not
-    // align with a Jan-31 anchor — see incident note A1).
-    private boolean alignedCalendar(Instant validFrom, Instant recordedAt, ChronoUnit unit, long step) {
-        LocalDateTime from = LocalDateTime.ofInstant(validFrom, ZoneOffset.UTC);
-        LocalDateTime to = LocalDateTime.ofInstant(recordedAt, ZoneOffset.UTC);
-        long diff = unit.between(from, to);
-        if (diff < 0 || diff % step != 0) {
-            return false;
-        }
-        return from.plus(diff, unit).equals(to);
     }
 }

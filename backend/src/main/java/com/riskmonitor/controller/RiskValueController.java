@@ -2,6 +2,7 @@ package com.riskmonitor.controller;
 
 import com.riskmonitor.dto.riskvalue.RiskValueStruct.CreateBatchReq;
 import com.riskmonitor.dto.riskvalue.RiskValueStruct.Resp;
+import com.riskmonitor.dto.riskvalue.RiskValueStruct.UpdateReq;
 import com.riskmonitor.service.RiskValueService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,5 +38,23 @@ public class RiskValueController {
         log.info("Created {} risk values for risk {}", created.size(), riskId);
         var body = created.stream().map(Resp::from).toList();
         return ResponseEntity.status(HttpStatus.CREATED).body(body);
+    }
+
+    @PutMapping("/{valueId}")
+    public Resp updateValue(
+            @PathVariable UUID riskId,
+            @PathVariable UUID valueId,
+            @Valid @RequestBody UpdateReq request
+    ) {
+        var updated = riskValueService.updateValue(riskId, valueId, request);
+        log.info("Updated risk value {} for risk {}", valueId, riskId);
+        return Resp.from(updated);
+    }
+
+    @DeleteMapping("/{valueId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteValue(@PathVariable UUID riskId, @PathVariable UUID valueId) {
+        riskValueService.deleteValue(riskId, valueId);
+        log.info("Deleted risk value {} for risk {}", valueId, riskId);
     }
 }
