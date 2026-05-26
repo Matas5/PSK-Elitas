@@ -1,184 +1,262 @@
-# PSK-Elitas Project Setup Guide
+# PSK-Elitas
 
-This guide explains how to start the project on a local computer.
+Risk-monitor app. Spring Boot 4 / Java 17 backend, React 19 + Vite + MUI frontend, PostgreSQL 16, and a small Node/Express auth server that handles Google OAuth (Passport).
 
-The project uses:
-
-- Spring Boot for the backend
-- React for the frontend
-- PostgreSQL for the database
-- Docker Compose to run PostgreSQL automatically
+| Service     | Port (host) | Source              |
+|-------------|-------------|---------------------|
+| Frontend    | 5173        | `frontend/`         |
+| Backend     | 8081        | `backend/`          |
+| Auth server | 3000        | `authServer.js`     |
+| PostgreSQL  | 5433        | `docker-compose.yml`|
 
 ---
 
 ## 1. Required Software
 
-Before starting, install these tools:
-
 - Git
-- IntelliJ IDEA
-- Java 17
-- Node.js and npm
-- Docker Desktop
+- Docker Desktop (or Docker Engine + Compose)
+- Java 17 (only if you want to run the backend outside Docker)
+- Node.js + npm (only if you want to run the frontend/authserver outside Docker)
+- IntelliJ IDEA (optional)
+
 ---
 
 ## 2. Clone the Repository and Branch Workflow
 
-Open a terminal and choose where you want to store the project.
-
-Example:
-
+```bash
 cd ~/Desktop
-
-Clone the repository:
-
 git clone https://github.com/Matas5/PSK-Elitas.git
-
-Go into the project folder:
-
 cd PSK-Elitas
-
-Switch to the development branch:
-
 git checkout Dev
-
-Pull the newest version of Dev:
-
 git pull origin Dev
+```
 
----
+### Development workflow
 
-Development workflow:
+We do not work directly on `main`. `main` is the production/stable branch.
 
-We do not work directly on main.
+During development we work from `Dev`. For each Jira work item, create a feature branch off `Dev`.
 
-The main branch is treated as the production/stable branch.
+Feature branch naming:
 
-During development, we work from the Dev branch. For each Jira work item, create a separate feature branch from Dev.
-
-Feature branch naming structure:
-
+```
 feature/007-BE-implemented-x-functionality
+```
 
 Where:
 
-007 = Jira work item number
-BE = backend task
-FE = frontend task
-implemented-x-functionality = short description of the work
+- `007` — Jira work item number
+- `BE` — backend task (use `FE` for frontend)
+- `implemented-x-functionality` — short description
 
 Examples:
 
+```
 feature/007-BE-implemented-health-endpoint
 feature/012-FE-created-risk-form
 feature/018-BE-added-risk-repository
+```
 
-To create a feature branch, first make sure you are on Dev:
+Create a feature branch:
 
+```bash
 git checkout Dev
 git pull origin Dev
-
-Then create your feature branch:
-
 git checkout -b feature/007-BE-implemented-x-functionality
+```
 
-After finishing your work, push the feature branch:
+When done:
 
+```bash
 git push -u origin feature/007-BE-implemented-x-functionality
+```
 
-Then create a Pull Request from your feature branch into Dev.
-
-At the end of the sprint, Dev is merged into main.
+Open a Pull Request from your feature branch into `Dev`. At the end of the sprint `Dev` is merged into `main`.
 
 ---
 
 ## 3. Project Structure
 
-The project is organized like this:
-
+```
 PSK-Elitas/
-├── backend/
-│   └── Spring Boot backend application
-├── frontend/
-│   └── React frontend application
-├── docker-compose.yml
-│   └── PostgreSQL database setup
+├── backend/             Spring Boot backend (Maven, Java 17)
+├── frontend/            React + Vite frontend
+├── authServer.js        Node/Express auth server (Google OAuth)
+├── config/              Passport config
+├── routes/              Auth routes
+├── docker-compose.yml   Postgres + authserver + backend + frontend
+├── Dockerfile.auth      Auth server image
+├── .env.example         Template for local secrets
 └── README.md
-    └── Project instructions
+```
 
 ---
 
-## 4. Running the project
+## 4. Google OAuth Setup
 
-### Recommended Development Setup
+The project uses **shared development OAuth credentials** so the whole team can develop locally without each spinning up a Google Cloud project.
 
-For development, we recommend running only PostgreSQL with Docker and running the backend/frontend normally.
+Ask your team lead for:
 
-PostgreSQL Docker configuration:
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
 
-Database: risk_monitor
-User: risk_user
-Password: risk_password
-Port: 5432
+Store them in your password manager — never paste them into Slack, email, or git.
 
-Start PostgreSQL from the project root:
+### Google Cloud Console settings (for reference)
 
-docker compose up -d
+If you ever need to update the OAuth app:
 
-Start the backend:
-
-- IntelliJ IDEA: run the main Spring Boot application class
-- VS Code / terminal:
-
-cd backend
-./mvnw spring-boot:run
-
-On Windows:
-
-cd backend
-mvnw.cmd spring-boot:run
-
-Start the frontend in another terminal:
-
-cd frontend
-npm install
-npm run dev
-
-Frontend URL:
-
-http://localhost:5173
-
-Backend health check:
-
-http://localhost:8081/api/health
-
-Expected response:
-
-OK
+- **Authorized JavaScript origins:** `http://localhost:3000`
+- **Authorized redirect URIs:** `http://localhost:3000/auth/callback`
 
 ---
 
-### Optional Full Docker Setup
+## 5. Create your `.env`
 
-If Dockerfiles for backend and frontend are added, the whole project can be started with one command:
+From the repo root:
 
+```bash
+cp .env.example .env
+```
+
+Then edit `.env` and fill in the credentials from your team lead:
+
+```env
+GOOGLE_CLIENT_ID=<paste-here>
+GOOGLE_CLIENT_SECRET=<paste-here>
+GOOGLE_CALLBACK_URL=http://localhost:3000/auth/callback
+SESSION_SECRET=<any-random-string>     # e.g. openssl rand -hex 32
+```
+
+The other keys (`AUTH_PORT`, `CORS_ORIGIN`, `VITE_AUTH_URL`, `VITE_BACKEND_URL`) already have correct defaults — leave them alone unless you know you need to change them.
+
+---
+
+## 6. Running the Project
+
+### Option A — Full Docker (recommended)
+
+Brings up Postgres + auth server + backend + frontend with one command:
+
+```bash
 docker compose up --build
+```
 
-This starts:
-
-- PostgreSQL
-- Spring Boot backend
-- React frontend
-
-The frontend container proxies `/api` requests to `http://backend:8081` inside the Docker network.
-
-PostgreSQL Docker configuration:
-
-Database: risk_monitor
-User: risk_user
-Password: risk_password
-Port: 5432
+Then open `http://localhost:5173`.
 
 Stop everything:
 
+```bash
 docker compose down
+```
+
+### Option B — Hybrid (Postgres in Docker, app processes on host)
+
+Useful when you want a faster backend/frontend reload loop or to debug from IntelliJ.
+
+Start Postgres only:
+
+```bash
+docker compose up -d postgres
+```
+
+Backend (new terminal):
+
+```bash
+cd backend
+./mvnw spring-boot:run            # Windows: mvnw.cmd spring-boot:run
+```
+
+Frontend (new terminal):
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Auth server (new terminal, from repo root):
+
+```bash
+npm install
+npm run dev                       # node --watch authServer.js
+```
+
+---
+
+## 7. URLs and Health Checks
+
+| What                  | URL                                                | Expected     |
+|-----------------------|----------------------------------------------------|--------------|
+| Frontend              | http://localhost:5173                              | UI loads     |
+| Backend health        | http://localhost:8081/api/health                   | `OK`         |
+| Auth server config    | http://localhost:3000/debug/config                 | JSON         |
+| Postgres              | `localhost:5433` (db `risk_monitor`)               | accepts conn |
+
+PostgreSQL credentials (dev only):
+
+- Database: `risk_monitor`
+- User: `dev_user`
+- Password: `dev_password`
+- Host port: `5433` (container exposes `5432` internally)
+
+---
+
+## 8. Troubleshooting
+
+**`TokenError: Bad Request` when logging in**
+
+- Check `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env` are correct and have no trailing spaces.
+- Restart: `docker compose down && docker compose up -d`.
+
+**OAuth callback fails / redirect mismatch**
+
+- Verify `GOOGLE_CALLBACK_URL` in `.env` exactly matches an authorized redirect URI in Google Cloud Console.
+
+**CORS errors from the frontend**
+
+- Confirm `CORS_ORIGIN` in `.env` includes your frontend origin (`http://localhost:5173`).
+
+**Can't reach `localhost:5173`**
+
+- First build takes 10–15s. Tail logs: `docker compose logs -f frontend`.
+
+**Port already in use**
+
+- Another process is on 3000, 5173, 8081, or 5433. Stop it or change the host-port mapping in `docker-compose.yml`.
+
+**Backend can't reach Postgres**
+
+- Make sure the `postgres` service is healthy: `docker compose ps`. The backend container uses `postgres:5432` internally; the host uses `localhost:5433`.
+
+---
+
+## 9. Implemented Features
+
+### Risk List
+
+Users can list, view, create, edit, and delete risks. Each risk has a category, logging frequency, unit of measurement, evaluation direction, and risk-level thresholds.
+
+- [x] ~~Backend `GET /api/risks` (list endpoint)~~
+- [x] ~~Frontend API methods (`listRisks`, `getRisk`, `createRisk`, `updateRisk`, `deleteRisk`)~~
+- [x] ~~`Risks.jsx` loads and displays the risk list~~
+- [x] ~~MUI table layout with clickable rows~~
+- [x] ~~Formatting helpers (`formatFrequency`, `formatDirection`, `formatThresholds`)~~
+- [x] ~~Read-only `RiskDetailsDialog` component~~
+- [x] ~~Row selection opens the details modal~~
+- [x] ~~List refreshes after creating a risk~~
+- [x] ~~Delete flow with confirmation~~
+- [x] ~~Edit flow (form dialog reused for create/edit)~~
+- [x] ~~`category` field on `Risk` entity, DTOs, and forms~~
+- [x] ~~Loading / empty / error states on the list page~~
+- [x] ~~Verified end-to-end (frontend lint+build, backend tests, manual flow)~~
+
+---
+
+## 10. Security Notes
+
+- Never commit `.env` — it is gitignored for a reason.
+- Never share credentials over Slack, email, or git.
+- The shared OAuth credentials are **development only**.
+- Each developer has their own local Postgres instance in Docker — no shared dev DB.

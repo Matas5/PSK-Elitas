@@ -15,21 +15,38 @@ function readStoredUser() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
+  const [provider, setProvider] = useState(null);
   const [loading, setLoading] = useState(true);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
   const prevUserRef = useRef(user);
 
-  // Fetch user data from auth server on mount
+  // Discover the active auth provider from the backend, then (if Google)
+  // restore the session via the external auth server's /user endpoint.
   useEffect(() => {
-    const fetchUser = async () => {
+    const bootstrap = async () => {
+      let activeProvider = 'google';
       try {
-        const authUrl = import.meta.env.VITE_AUTH_URL || "http://localhost:3000";
-        const response = await fetch(`${authUrl}/user`, { credentials: "include" });
-        
+        const cfg = await fetch('/api/auth/config');
+        if (cfg.ok) {
+          const data = await cfg.json();
+          if (data?.provider) activeProvider = data.provider;
+        }
+      } catch (error) {
+        console.error('Failed to fetch /api/auth/config, defaulting to google:', error);
+      }
+      setProvider(activeProvider);
+
+      if (activeProvider !== 'google') {
+        setLoading(false);
+        return;
+      }
+      try {
+        const authUrl = import.meta.env.VITE_AUTH_URL || 'http://localhost:3000';
+        const response = await fetch(`${authUrl}/user`, { credentials: 'include' });
         if (response.ok) {
           const data = await response.json();
           if (data.user) {
-            setUser(data.user);
+            setUser({ ...data.user, provider: 'google' });
           }
         }
       } catch (error) {
@@ -39,7 +56,7 @@ export function AuthProvider({ children }) {
       }
     };
 
-    fetchUser();
+    bootstrap();
   }, []);
 
   // Detect when user logs in (transitions from null/falsy to truthy)
@@ -63,8 +80,17 @@ export function AuthProvider({ children }) {
   const clearJustLoggedIn = useCallback(() => setJustLoggedIn(false), []);
 
   const value = useMemo(
-    () => ({ user, login, logout, isAuthenticated: Boolean(user), loading, justLoggedIn, clearJustLoggedIn }),
-    [user, login, logout, loading, justLoggedIn, clearJustLoggedIn],
+    () => ({
+      user,
+      provider,
+      login,
+      logout,
+      isAuthenticated: Boolean(user),
+      loading,
+      justLoggedIn,
+      clearJustLoggedIn,
+    }),
+    [user, provider, login, logout, loading, justLoggedIn, clearJustLoggedIn],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

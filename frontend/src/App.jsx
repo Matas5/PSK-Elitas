@@ -9,7 +9,7 @@ import { useAuth } from './auth/AuthContext';
 import { layout } from './theme';
 import { ROUTES } from './routes';
 
-import { Dashboard, Login, Profile, Reports, Risks } from './pages';
+import { Dashboard, LocalRegister, Login, Profile, Reports, Risks } from './pages';
 
 function AuthedShell({ children }) {
   return (
@@ -43,6 +43,7 @@ export default function App() {
   <Notification />
   <Routes>
     <Route path={ROUTES.LOGIN} element={<Login />} />
+    <Route path={ROUTES.REGISTER} element={<LocalRegister />} />
 
     <Route
       path={ROUTES.DASHBOARD}
