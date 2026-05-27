@@ -1,3 +1,5 @@
+import tokens from './tokens';
+
 const components = {
   MuiCssBaseline: {
     styleOverrides: (theme) => ({
@@ -12,7 +14,7 @@ const components = {
         height: 8,
       },
       '*::-webkit-scrollbar-thumb': {
-        backgroundColor: 'rgba(5, 102, 141, 0.25)',
+        backgroundColor: tokens.effects.scrollbarThumb,
         borderRadius: 8,
       },
     }),
@@ -45,7 +47,7 @@ const components = {
       root: ({ theme }) => ({
         borderRadius: 14,
         border: `1px solid ${theme.palette.divider}`,
-        boxShadow: '0 1px 2px rgba(5, 102, 141, 0.04)',
+        boxShadow: tokens.effects.cardShadow,
       }),
     },
   },
