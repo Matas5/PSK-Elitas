@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
@@ -7,125 +7,74 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
 
-import { createRiskValues } from '../api/riskValuesApi';
-import { formatFrequency } from '../constants/risk';
+import { createRiskValues, listRiskValues } from '../api/riskValuesApi';
+import { dateInputProps, toInputDateTime } from '../constants/risk';
 
-function toLocalDateTimeInput(date) {
-  const pad = (n) => String(n).padStart(2, '0');
-  return (
-    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
-    `T${pad(date.getHours())}:${pad(date.getMinutes())}`
-  );
-}
+function addInterval(date, step, unit) {
+  const result = new Date(date);
+  if (!Number.isFinite(step) || step <= 0) return result;
 
-function getAnchorTimeFromRisk(risk) {
-  if (!risk?.validFrom) return null;
-
-  const anchorDate = new Date(risk.validFrom);
-  if (Number.isNaN(anchorDate.getTime())) return null;
-
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${pad(anchorDate.getUTCHours())}:${pad(anchorDate.getUTCMinutes())}`;
-}
-
-function initializeFormWithAnchor(risk) {
-  const anchorTime = getAnchorTimeFromRisk(risk);
-  if (!anchorTime) {
-    return {
-      value: '',
-      recordedAt: toLocalDateTimeInput(new Date()),
-      anchorTime: null,
-    };
+  switch (unit) {
+    case 'SECOND': result.setSeconds(result.getSeconds() + step); break;
+    case 'MINUTE': result.setMinutes(result.getMinutes() + step); break;
+    case 'HOUR': result.setHours(result.getHours() + step); break;
+    case 'DAY': result.setDate(result.getDate() + step); break;
+    case 'MONTH': result.setMonth(result.getMonth() + step); break;
+    case 'QUARTER': result.setMonth(result.getMonth() + step * 3); break;
+    case 'YEAR': result.setFullYear(result.getFullYear() + step); break;
+    default: break;
   }
-
-  const today = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  const [hours, minutes] = anchorTime.split(':');
-  const dateStr = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(today.getDate())}`;
-
-  return {
-    value: '',
-    recordedAt: `${dateStr}T${hours}:${minutes}`,
-    anchorTime,
-  };
+  return result;
 }
 
-function formatDateTime(value) {
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  }).format(value);
-}
-
-function roundToNearest(value, step) {
-  return Math.round(value / step) * step;
-}
-
-function getSuggestedDateTime(risk, value) {
-  if (!value) return null;
-
-  const date = new Date(value);
+function defaultRecordedAt(risk, existingValues) {
   const step = Number(risk?.timeIntervalValue);
   const unit = risk?.timeIntervalUnit;
 
-  if (Number.isNaN(date.getTime()) || !Number.isFinite(step) || step <= 0) {
-    return null;
-  }
-
-  const suggestion = new Date(date);
-
-  if (unit === 'MINUTE') {
-    suggestion.setSeconds(0, 0);
-    suggestion.setMinutes(roundToNearest(suggestion.getMinutes(), step));
-    return suggestion;
-  }
-
-  if (unit === 'HOUR') {
-    const hour = suggestion.getHours();
-    const minuteOffset = suggestion.getMinutes() / 60;
-    suggestion.setHours(roundToNearest(hour + minuteOffset, step), 0, 0, 0);
-    return suggestion;
-  }
-
-  if (unit === 'DAY') {
-    const hourOffset = suggestion.getHours() + suggestion.getMinutes() / 60;
-    if (hourOffset >= 12) {
-      suggestion.setDate(suggestion.getDate() + 1);
+  if (existingValues && existingValues.length > 0) {
+    const latestMs = existingValues.reduce((max, entry) => {
+      const ms = new Date(entry.recordedAt).getTime();
+      return Number.isFinite(ms) && ms > max ? ms : max;
+    }, -Infinity);
+    if (Number.isFinite(latestMs)) {
+      return toInputDateTime(addInterval(new Date(latestMs), step, unit), unit);
     }
-    suggestion.setHours(0, 0, 0, 0);
-    return suggestion;
   }
 
-  return null;
-}
+  if (risk?.validFrom) {
+    return toInputDateTime(risk.validFrom, unit);
+  }
 
-function applyAnchorTime(value, anchorTime) {
-  if (!anchorTime || !value.includes('T')) return value;
-
-  const datePart = value.split('T')[0];
-  return `${datePart}T${anchorTime}`;
+  return toInputDateTime(new Date(), unit);
 }
 
 export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
-  const [form, setForm] = useState(() => initializeFormWithAnchor(risk));
+  const [form, setForm] = useState(() => ({
+    value: '',
+    recordedAt: defaultRecordedAt(risk, null),
+  }));
   const [errors, setErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const suggestedDateTime = useMemo(
-    () => getSuggestedDateTime(risk, form.recordedAt),
-    [risk, form.recordedAt],
-  );
-  const suggestedInputValue = suggestedDateTime ? toLocalDateTimeInput(suggestedDateTime) : '';
-  const showSuggestion = !form.anchorTime && suggestedInputValue && suggestedInputValue !== form.recordedAt;
+  const userEditedDateRef = useRef(false);
+
+  useEffect(() => {
+    let active = true;
+    // First page (recordedAt,desc) holds the latest value — enough for the default date.
+    listRiskValues(risk.id)
+      .then((data) => {
+        if (!active || userEditedDateRef.current) return;
+        setForm((prev) => ({ ...prev, recordedAt: defaultRecordedAt(risk, data.content) }));
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [risk]);
 
   const update = (field) => (event) => {
     const value = event.target.value;
-    setForm((prev) => ({
-      ...prev,
-      [field]: field === 'recordedAt' ? applyAnchorTime(value, prev.anchorTime) : value,
-    }));
+    if (field === 'recordedAt') userEditedDateRef.current = true;
+    setForm((prev) => ({ ...prev, [field]: value }));
 
     setErrors((prev) => {
       if (!prev[field]) return prev;
@@ -163,25 +112,11 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
       return;
     }
 
-    const recordedAtIso = form.anchorTime ? (() => {
-      const [datePart] = form.recordedAt.split('T');
-      const [hours, minutes] = form.anchorTime.split(':');
-      const [year, month, day] = datePart.split('-');
-      const utcDate = new Date(Date.UTC(
-        Number(year),
-        Number(month) - 1,
-        Number(day),
-        Number(hours),
-        Number(minutes),
-      ));
-      return utcDate.toISOString();
-    })() : new Date(form.recordedAt).toISOString();
-
     const body = {
       entries: [
         {
           value: Number(form.value),
-          recordedAt: recordedAtIso,
+          recordedAt: new Date(form.recordedAt).toISOString(),
         },
       ],
     };
@@ -201,16 +136,6 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
   const handleClose = () => {
     if (submitting) return;
     onClose();
-  };
-
-  const applySuggestedDateTime = () => {
-    setForm((prev) => ({ ...prev, recordedAt: suggestedInputValue }));
-    setErrors((prev) => {
-      if (!prev.recordedAt) return prev;
-      const next = { ...prev };
-      delete next.recordedAt;
-      return next;
-    });
   };
 
   return (
@@ -243,24 +168,10 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
             value={form.recordedAt}
             onChange={update('recordedAt')}
             error={Boolean(errors.recordedAt)}
-            helperText={errors.recordedAt || (form.anchorTime ? `Time is locked to ${form.anchorTime} UTC (risk anchor)` : ' ')}
+            helperText={errors.recordedAt || ' '}
             InputLabelProps={{ shrink: true }}
+            inputProps={dateInputProps(risk)}
           />
-
-          {showSuggestion && (
-            <Stack
-              direction={{ xs: 'column', sm: 'row' }}
-              spacing={1.5}
-              alignItems={{ xs: 'stretch', sm: 'center' }}
-            >
-              <Typography variant="body2" color="text.secondary" sx={{ flexGrow: 1 }}>
-                Suggested {formatFrequency(risk).toLowerCase()}: {formatDateTime(suggestedDateTime)}
-              </Typography>
-              <Button size="small" onClick={applySuggestedDateTime}>
-                Use suggested time
-              </Button>
-            </Stack>
-          )}
 
           {submitError && <Alert severity="error">{submitError}</Alert>}
         </Stack>

@@ -65,6 +65,20 @@ export async function listRiskValues(
     return response.json();
 }
 
+// Pages through the values endpoint (backend caps size at 100) into a flat array.
+export async function listAllRiskValues(riskId, { sortField = "recordedAt", sortDirection = "desc" } = {}) {
+    const size = 100;
+    const first = await listRiskValues(riskId, { page: 0, size, sortField, sortDirection });
+    const all = [...first.content];
+
+    for (let page = 1; page < first.totalPages; page += 1) {
+        const next = await listRiskValues(riskId, { page, size, sortField, sortDirection });
+        all.push(...next.content);
+    }
+
+    return all;
+}
+
 export async function createRiskValues(riskId, body) {
     const response = await fetch(`/api/risks/${riskId}/values`, {
         method: "POST",

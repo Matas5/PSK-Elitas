@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -42,6 +43,7 @@ export default function Risks() {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const { showNotification } = useNotification();
+  const navigate = useNavigate();
 
   const loadRiskList = useCallback(async () => {
     setLoading(true);
@@ -93,6 +95,11 @@ export default function Risks() {
 
   const handleAddValue = () => {
     setLogValueOpen(true);
+  };
+
+  const handleViewGraph = () => {
+    if (!selectedRisk) return;
+    navigate(`/risks/${selectedRisk.id}/graph`);
   };
 
   const handleValueLogged = () => {
@@ -247,6 +254,7 @@ export default function Risks() {
         onClose={closeDetails}
         onEdit={handleEdit}
         onAddValue={handleAddValue}
+        onViewGraph={handleViewGraph}
         onDelete={handleDeleteRequest}
         deleting={deleting}
         deleteError={deleteError}

@@ -23,39 +23,14 @@ import Typography from '@mui/material/Typography';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 
-import { deleteRiskValue, listRiskValues, updateRiskValue } from '../api/riskValuesApi';
+import { deleteRiskValue, listAllRiskValues, updateRiskValue } from '../api/riskValuesApi';
 import { useNotification } from '../context/NotificationContext';
+import { dateInputProps, formatRiskDateTime, toInputDateTime } from '../constants/risk';
 
-function formatDateTime(value) {
-    if (!value) return '-';
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '-';
-
-    return new Intl.DateTimeFormat(undefined, {
-        dateStyle: 'medium',
-        timeStyle: 'short',
-    }).format(date);
-}
-
-function toInputDateTime(value) {
-    if (!value) return '';
-
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return '';
-
-    const pad = (n) => String(n).padStart(2, '0');
-
-    return (
-        `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
-        `T${pad(date.getHours())}:${pad(date.getMinutes())}`
-    );
-}
-
-function EditRiskValueDialog({ entry, riskId, measurementUnit, onClose, onSaved }) {
+function EditRiskValueDialog({ entry, risk, onClose, onSaved }) {
     const [form, setForm] = useState(() => ({
         value: entry?.value ?? '',
-        recordedAt: toInputDateTime(entry?.recordedAt),
+        recordedAt: toInputDateTime(entry?.recordedAt, risk),
     }));
     const [errors, setErrors] = useState({});
     const [submitError, setSubmitError] = useState(null);
@@ -102,7 +77,7 @@ function EditRiskValueDialog({ entry, riskId, measurementUnit, onClose, onSaved 
 
         try {
             setSubmitting(true);
-            const updated = await updateRiskValue(riskId, entry.id, {
+            const updated = await updateRiskValue(risk.id, entry.id, {
                 value: Number(form.value),
                 recordedAt: new Date(form.recordedAt).toISOString(),
             });
@@ -137,7 +112,7 @@ function EditRiskValueDialog({ entry, riskId, measurementUnit, onClose, onSaved 
                         value={form.value}
                         onChange={update('value')}
                         error={Boolean(errors.value)}
-                        helperText={errors.value || `Numeric value${measurementUnit ? ` in ${measurementUnit}` : ''}`}
+                        helperText={errors.value || `Numeric value${risk?.measurementUnit ? ` in ${risk.measurementUnit}` : ''}`}
                         inputProps={{ step: 'any' }}
                     />
                     <TextField
@@ -149,6 +124,7 @@ function EditRiskValueDialog({ entry, riskId, measurementUnit, onClose, onSaved 
                         error={Boolean(errors.recordedAt)}
                         helperText={errors.recordedAt || ' '}
                         InputLabelProps={{ shrink: true }}
+                        inputProps={dateInputProps(risk)}
                     />
                     {submitError && <Alert severity="error">{submitError}</Alert>}
                 </Stack>
@@ -163,7 +139,9 @@ function EditRiskValueDialog({ entry, riskId, measurementUnit, onClose, onSaved 
     );
 }
 
-export default function RiskValueList({ riskId, measurementUnit, refreshKey = 0 }) {
+export default function RiskValueList({ risk, refreshKey = 0 }) {
+    const riskId = risk?.id;
+    const measurementUnit = risk?.measurementUnit;
     const [values, setValues] = useState([]);
     const [loading, setLoading] = useState(false);
     const [loadError, setLoadError] = useState(null);
@@ -187,7 +165,7 @@ export default function RiskValueList({ riskId, measurementUnit, refreshKey = 0 
             setLoadError(null);
 
             try {
-                const data = await listRiskValues(riskId);
+                const data = await listAllRiskValues(riskId);
                 if (active) setValues(data);
             } catch (err) {
                 if (active) setLoadError(err.message || 'Failed to load risk values.');
@@ -279,6 +257,7 @@ export default function RiskValueList({ riskId, measurementUnit, refreshKey = 0 
                     value={fromDate}
                     onChange={(event) => setFromDate(event.target.value)}
                     InputLabelProps={{ shrink: true }}
+                    inputProps={dateInputProps(risk)}
                     fullWidth
                 />
 
@@ -288,6 +267,7 @@ export default function RiskValueList({ riskId, measurementUnit, refreshKey = 0 
                     value={toDate}
                     onChange={(event) => setToDate(event.target.value)}
                     InputLabelProps={{ shrink: true }}
+                    inputProps={dateInputProps(risk)}
                     fullWidth
                 />
 
@@ -340,7 +320,7 @@ export default function RiskValueList({ riskId, measurementUnit, refreshKey = 0 
                                     onClick={() => setSelectedValueId(entry.id)}
                                     sx={{ cursor: 'pointer' }}
                                 >
-                                    <TableCell>{formatDateTime(entry.recordedAt)}</TableCell>
+                                    <TableCell>{formatRiskDateTime(entry.recordedAt, risk)}</TableCell>
                                     <TableCell align="right">{entry.value}</TableCell>
                                     <TableCell align="right">
                                         <Tooltip title="Edit logged value">
@@ -386,8 +366,7 @@ export default function RiskValueList({ riskId, measurementUnit, refreshKey = 0 
             {editingValue && (
                 <EditRiskValueDialog
                     entry={editingValue}
-                    riskId={riskId}
-                    measurementUnit={measurementUnit}
+                    risk={risk}
                     onClose={() => setEditingValue(null)}
                     onSaved={handleSavedValue}
                 />
@@ -402,7 +381,7 @@ export default function RiskValueList({ riskId, measurementUnit, refreshKey = 0 
                 <DialogTitle>Delete logged value?</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        This will permanently delete the value logged on {formatDateTime(valueToDelete?.recordedAt)}.
+                        This will permanently delete the value logged on {formatRiskDateTime(valueToDelete?.recordedAt, risk)}.
                     </DialogContentText>
                     {deleteError && <Alert severity="error" sx={{ mt: 2 }}>{deleteError}</Alert>}
                 </DialogContent>

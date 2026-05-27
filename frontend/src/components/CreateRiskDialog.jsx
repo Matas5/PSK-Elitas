@@ -17,6 +17,8 @@ import ConflictDialog from './ConflictDialog';
 import {
   TIME_INTERVAL_UNITS,
   RISK_DIRECTIONS,
+  dateInputProps,
+  toInputDateTime,
 } from '../constants/risk';
 
 const NAME_MIN = 3;
@@ -43,21 +45,6 @@ const INITIAL_STATE = {
   validUntil: '',
 };
 
-function toLocalDateTimeInput(date) {
-  const pad = (n) => String(n).padStart(2, '0');
-  return (
-    `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
-    `T${pad(date.getHours())}:${pad(date.getMinutes())}`
-  );
-}
-
-function toDateTimeInput(value) {
-  if (!value) return '';
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return '';
-  return toLocalDateTimeInput(date);
-}
-
 function parseDecimal(value) {
   if (value === '' || value === null || value === undefined) return null;
   const n = Number(value);
@@ -82,7 +69,7 @@ function riskToForm(risk) {
   if (!risk) {
     return {
       ...INITIAL_STATE,
-      validFrom: toLocalDateTimeInput(new Date()),
+      validFrom: toInputDateTime(new Date(), INITIAL_STATE.timeIntervalUnit),
       version: null,
     };
   }
@@ -99,8 +86,8 @@ function riskToForm(risk) {
     upperMax: hasValue(risk.upperMaxThreshold) ? String(risk.upperMaxThreshold) : '',
     lowerMid: hasValue(risk.lowerMidThreshold) ? String(risk.lowerMidThreshold) : '',
     lowerMin: hasValue(risk.lowerMinThreshold) ? String(risk.lowerMinThreshold) : '',
-    validFrom: toDateTimeInput(risk.validFrom),
-    validUntil: toDateTimeInput(risk.validUntil),
+    validFrom: toInputDateTime(risk.validFrom, risk),
+    validUntil: toInputDateTime(risk.validUntil, risk),
     version: risk.version,
   };
 }
@@ -518,6 +505,7 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
               error={Boolean(errors.validFrom)}
               helperText={errors.validFrom || ' '}
               InputLabelProps={{ shrink: true }}
+              inputProps={dateInputProps(form.timeIntervalUnit)}
               sx={{ flex: 1 }}
             />
             <TextField
@@ -528,6 +516,7 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
               error={Boolean(errors.validUntil)}
               helperText={errors.validUntil || 'Optional'}
               InputLabelProps={{ shrink: true }}
+              inputProps={dateInputProps(form.timeIntervalUnit)}
               sx={{ flex: 1 }}
             />
           </Stack>
