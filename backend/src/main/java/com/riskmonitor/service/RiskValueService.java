@@ -8,6 +8,8 @@ import com.riskmonitor.entity.RiskValue;
 import com.riskmonitor.repository.RiskRepository;
 import com.riskmonitor.repository.RiskValueRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,17 +28,20 @@ public class RiskValueService {
     private final RiskRepository riskRepository;
 
     @Transactional(readOnly = true)
-    public List<RiskValue> listValues(UUID riskId) {
-        if (!riskRepository.existsById(riskId)) {
-            throw new IllegalArgumentException("Risk not found: " + riskId);
-        }
+    public List<RiskValue> listValues(UUID riskId, String userId) {
+        getRiskForUser(riskId, userId);
         return riskValueRepository.findByRiskIdOrderByRecordedAtAsc(riskId);
     }
 
+    @Transactional(readOnly = true)
+    public Page<RiskValue> listValues(UUID riskId, String userId, Pageable pageable) {
+        getRiskForUser(riskId, userId);
+        return riskValueRepository.findByRiskId(riskId, pageable);
+    }
+
     @Transactional
-    public List<RiskValue> createValues(UUID riskId, CreateBatchReq request) {
-        Risk risk = riskRepository.findById(riskId)
-                .orElseThrow(() -> new IllegalArgumentException("Risk not found: " + riskId));
+    public List<RiskValue> createValues(UUID riskId, String userId, CreateBatchReq request) {
+        Risk risk = getRiskForUser(riskId, userId);
 
         Set<Instant> seen = new HashSet<>();
         List<RiskValue> toSave = new ArrayList<>(request.entries().size());
@@ -58,25 +63,28 @@ public class RiskValueService {
     }
 
     @Transactional
-    public RiskValue updateValue(UUID riskId, UUID valueId, UpdateReq request) {
-        RiskValue riskValue = getValueForRisk(riskId, valueId);
+    public RiskValue updateValue(UUID riskId, String userId, UUID valueId, UpdateReq request) {
+        RiskValue riskValue = getValueForRisk(riskId, userId, valueId);
         validateWithinValidityWindow(riskValue.getRisk(), request.recordedAt(), 0);
         riskValue.update(request.value(), request.recordedAt());
         return riskValueRepository.save(riskValue);
     }
 
     @Transactional
-    public void deleteValue(UUID riskId, UUID valueId) {
-        RiskValue riskValue = getValueForRisk(riskId, valueId);
+    public void deleteValue(UUID riskId, String userId, UUID valueId) {
+        RiskValue riskValue = getValueForRisk(riskId, userId, valueId);
         riskValueRepository.delete(riskValue);
     }
 
-    private RiskValue getValueForRisk(UUID riskId, UUID valueId) {
-        if (!riskRepository.existsById(riskId)) {
-            throw new IllegalArgumentException("Risk not found: " + riskId);
-        }
+    private RiskValue getValueForRisk(UUID riskId, String userId, UUID valueId) {
+        getRiskForUser(riskId, userId);
         return riskValueRepository.findByIdAndRiskId(valueId, riskId)
                 .orElseThrow(() -> new IllegalArgumentException("Risk value not found: " + valueId));
+    }
+
+    private Risk getRiskForUser(UUID riskId, String userId) {
+        return riskRepository.findByIdAndGoogleUserId(riskId, userId)
+                .orElseThrow(() -> new IllegalArgumentException("Risk not found: " + riskId));
     }
 
     private void validateWithinValidityWindow(Risk risk, Instant recordedAt, int index) {
