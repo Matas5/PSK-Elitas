@@ -3,8 +3,10 @@ package com.riskmonitor.service;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import org.springframework.data.domain.Sort;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,8 +18,10 @@ import com.riskmonitor.exception.OptimisticLockingConflictException;
 import com.riskmonitor.repository.RiskRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 @RequiredArgsConstructor
 public class RiskService {
 
@@ -30,9 +34,16 @@ public class RiskService {
                 .orElseThrow(() -> new IllegalArgumentException("Risk not found: " + id));
     }
 
+    @Async
     @Transactional(readOnly = true)
-    public List<Risk> listRisks(String googleUserId) {
-        return riskRepository.findAllByGoogleUserId(googleUserId, Sort.by(Sort.Direction.ASC, "name"));
+    public CompletableFuture<List<RiskResp>> listRisks(String googleUserId) {
+        log.info("listRisks executing asynchronously on thread {}", Thread.currentThread().getName());
+        List<RiskResp> result = riskRepository
+                .findAllByGoogleUserId(googleUserId, Sort.by(Sort.Direction.ASC, "name"))
+                .stream()
+                .map(RiskResp::from)
+                .toList();
+        return CompletableFuture.completedFuture(result);
     }
 
     @Transactional

@@ -2,6 +2,7 @@ package com.riskmonitor.controller;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,10 +41,8 @@ public class RiskController {
     }
 
     @GetMapping
-    public List<RiskResp> listRisks(@CurrentUserId String userId) {
-        return riskService.listRisks(userId).stream()
-                .map(RiskResp::from)
-                .toList();
+    public CompletableFuture<List<RiskResp>> listRisks(@CurrentUserId String userId) {
+        return riskService.listRisks(userId);
     }
 
     @PostMapping

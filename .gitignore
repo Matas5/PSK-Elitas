@@ -29,6 +29,7 @@ npm-debug.log*
 
 # Claude (local-only — never commit)
 CLAUDE.md
+PROJECT-INFO.md
 .claude/
 .claude.json
 
@@ -37,3 +38,6 @@ CLAUDE.md
 .direnv/
 result
 result-*
+
+# Local-only deliverable drafts
+requirement_implementations/product-conception-diagram.html
