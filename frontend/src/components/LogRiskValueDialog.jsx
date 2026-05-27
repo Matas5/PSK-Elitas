@@ -61,10 +61,11 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
 
   useEffect(() => {
     let active = true;
+    // First page (recordedAt,desc) holds the latest value — enough for the default date.
     listRiskValues(risk.id)
-      .then((values) => {
+      .then((data) => {
         if (!active || userEditedDateRef.current) return;
-        setForm((prev) => ({ ...prev, recordedAt: defaultRecordedAt(risk, values) }));
+        setForm((prev) => ({ ...prev, recordedAt: defaultRecordedAt(risk, data.content) }));
       })
       .catch(() => {});
     return () => { active = false; };

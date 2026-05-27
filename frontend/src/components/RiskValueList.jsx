@@ -23,7 +23,7 @@ import Typography from '@mui/material/Typography';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 
-import { deleteRiskValue, listRiskValues, updateRiskValue } from '../api/riskValuesApi';
+import { deleteRiskValue, listAllRiskValues, updateRiskValue } from '../api/riskValuesApi';
 import { useNotification } from '../context/NotificationContext';
 import { dateInputProps, formatRiskDateTime, toInputDateTime } from '../constants/risk';
 
@@ -165,7 +165,7 @@ export default function RiskValueList({ risk, refreshKey = 0 }) {
             setLoadError(null);
 
             try {
-                const data = await listRiskValues(riskId);
+                const data = await listAllRiskValues(riskId);
                 if (active) setValues(data);
             } catch (err) {
                 if (active) setLoadError(err.message || 'Failed to load risk values.');

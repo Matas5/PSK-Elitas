@@ -1,3 +1,4 @@
+import { Link as RouterLink } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -20,6 +21,7 @@ import {
   formatFrequency,
   formatRiskDateTime,
 } from '../constants/risk';
+import { ROUTES } from '../routes';
 
 function hasValue(value) {
   return value !== null && value !== undefined && value !== '';
@@ -133,6 +135,13 @@ export default function RiskDetailsDialog({
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={onClose} disabled={deleting}>Close</Button>
+        <Button
+          component={RouterLink}
+          to={`${ROUTES.RISK_VALUES}?riskId=${risk.id}`}
+          disabled={deleting}
+        >
+          View all values
+        </Button>
         <Button
           variant="contained"
           startIcon={<AddOutlinedIcon />}

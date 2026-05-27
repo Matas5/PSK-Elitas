@@ -22,7 +22,7 @@ import {
 } from 'recharts';
 
 import { getRisk } from '../api/risksApi';
-import { listRiskValues } from '../api/riskValuesApi';
+import { listAllRiskValues } from '../api/riskValuesApi';
 import {
   RISK_LEVELS,
   classifyRiskLevel,
@@ -170,7 +170,7 @@ export default function RiskGraph() {
     setLoading(true);
     setLoadError(null);
 
-    Promise.all([getRisk(riskId), listRiskValues(riskId)])
+    Promise.all([getRisk(riskId), listAllRiskValues(riskId)])
       .then(([riskData, valueData]) => {
         if (!active) return;
         setRisk(riskData);

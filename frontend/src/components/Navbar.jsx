@@ -17,6 +17,7 @@ import Divider from '@mui/material/Divider';
 
 import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
+import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
@@ -31,6 +32,7 @@ import { ROUTES } from '../routes';
 const NAV_ITEMS = [
   { to: ROUTES.DASHBOARD, label: 'Dashboard', icon: <DashboardOutlinedIcon /> },
   { to: ROUTES.RISKS, label: 'Risks', icon: <WarningAmberOutlinedIcon /> },
+  { to: ROUTES.RISK_VALUES, label: 'Risk Values', icon: <TimelineOutlinedIcon /> },
   { to: ROUTES.REPORTS, label: 'Reports', icon: <AssessmentOutlinedIcon /> },
   { to: ROUTES.PROFILE, label: 'Profile', icon: <PersonOutlineOutlinedIcon /> },
 ];

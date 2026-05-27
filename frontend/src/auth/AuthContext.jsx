@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useRef, useMemo, useState } from 'react';
 
 const STORAGE_KEY = 'auth_user';

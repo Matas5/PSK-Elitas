@@ -9,7 +9,7 @@ import { useAuth } from './auth/AuthContext';
 import { layout } from './theme';
 import { ROUTES } from './routes';
 
-import { Dashboard, LocalRegister, Login, Profile, Reports, RiskGraph, Risks } from './pages';
+import { Dashboard, LocalRegister, Login, Profile, Reports, RiskGraph, Risks, RiskValues } from './pages';
 
 function AuthedShell({ children }) {
   return (
@@ -68,6 +68,15 @@ export default function App() {
       element={(
         <RequireAuth>
           <AuthedShell><RiskGraph /></AuthedShell>
+        </RequireAuth>
+      )}
+    />
+
+    <Route
+      path={ROUTES.RISK_VALUES}
+      element={(
+        <RequireAuth>
+          <AuthedShell><RiskValues /></AuthedShell>
         </RequireAuth>
       )}
     />

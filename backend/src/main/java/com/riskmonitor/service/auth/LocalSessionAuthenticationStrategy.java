@@ -11,6 +11,8 @@ import java.util.UUID;
 @Service
 @Primary
 @Profile("local")
+// Local profile authentication is request-scoped by design: the user id is read
+// from the current HTTP request header and no server-side session state is kept.
 public class LocalSessionAuthenticationStrategy
         extends GoogleHeaderAuthenticationStrategy {
 

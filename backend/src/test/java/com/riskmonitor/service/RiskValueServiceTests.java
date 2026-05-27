@@ -54,6 +54,9 @@ class RiskValueServiceTests {
                     if (method.getName().equals("findById")) {
                         return Optional.of(risk);
                     }
+                    if (method.getName().equals("findByIdAndGoogleUserId")) {
+                        return Optional.of(risk);
+                    }
                     throw new UnsupportedOperationException(method.getName());
                 }
         );
@@ -73,6 +76,7 @@ class RiskValueServiceTests {
         RiskValueService riskValueService = new RiskValueService(riskValueRepository, riskRepository);
         List<RiskValue> saved = riskValueService.createValues(
                 riskId,
+                "google-user-1",
                 new CreateBatchReq(List.of(new EntryReq(BigDecimal.valueOf(9), recordedAt)))
         );
 
