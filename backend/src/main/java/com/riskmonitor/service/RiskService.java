@@ -1,16 +1,21 @@
 package com.riskmonitor.service;
 
-import com.riskmonitor.dto.risk.RiskStruct.RiskCreateReq;
-import com.riskmonitor.dto.risk.RiskStruct.RiskUpdateReq;
-import com.riskmonitor.entity.Risk;
-import com.riskmonitor.repository.RiskRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.riskmonitor.dto.risk.RiskStruct.RiskCreateReq;
+import com.riskmonitor.dto.risk.RiskStruct.RiskResp;
+import com.riskmonitor.dto.risk.RiskStruct.RiskUpdateReq;
+import com.riskmonitor.entity.Risk;
+import com.riskmonitor.exception.OptimisticLockingConflictException;
+import com.riskmonitor.repository.RiskRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -98,6 +103,17 @@ public class RiskService {
         BigDecimal upperMax = req.hasUpperBounds() ? req.upperMaxThreshold() : null;
 
         Risk risk = getRisk(id, googleUserId);
+        
+        // Optimistic locking: check version match
+        if (!risk.getVersion().equals(req.version())) {
+            throw new OptimisticLockingConflictException(
+                    "Risk with id " + id + " has been modified by another user",
+                    risk.getId(),
+                    risk.getVersion(),
+                    RiskResp.from(risk)
+            );
+        }
+        
         risk.update(new Risk.UpdateRiskFields(
                 req.name().trim(),
                 req.category().trim(),
