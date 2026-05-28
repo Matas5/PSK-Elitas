@@ -128,7 +128,7 @@ function ThresholdGroupLabel({ children }) {
   );
 }
 
-export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUpdated }) {
+export default function CreateRiskDialog({ risk = null, teamId = '', onClose, onCreated, onUpdated }) {
   const isEdit = Boolean(risk);
   const [form, setForm] = useState(() => riskToForm(risk));
   const [errors, setErrors] = useState({});
@@ -252,6 +252,10 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
       }
     }
 
+    if (!isEdit && !teamId) {
+      next.teamId = 'Select an active team before creating a risk.';
+    }
+
     return next;
   };
 
@@ -280,6 +284,7 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
       lowerMinThreshold: hasLower ? parseDecimal(form.lowerMin) : null,
       validFrom: new Date(form.validFrom).toISOString(),
       validUntil: form.validUntil ? new Date(form.validUntil).toISOString() : null,
+      ...(!isEdit && { teamId }),
       ...(isEdit && { version: form.version }),
     };
 
@@ -552,6 +557,7 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
           </Stack>
 
           {submitError && <Alert severity="error">{submitError}</Alert>}
+          {errors.teamId && <Alert severity="warning">{errors.teamId}</Alert>}
         </Stack>
       </DialogContent>
       <DialogActions sx={{ px: 3, py: 2 }}>
@@ -575,4 +581,3 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
     </Fragment>
   );
 }
-

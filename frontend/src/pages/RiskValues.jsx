@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
@@ -41,6 +42,7 @@ import { deleteRiskValue, listRiskValues, updateRiskValue } from '../api/riskVal
 import LogRiskValueDialog from '../components/LogRiskValueDialog';
 import { useNotification } from '../context/NotificationContext';
 import { useLocale } from '../context/LocaleContext.jsx';
+import { useTeam } from '../context/TeamContext';
 import { needsSeconds } from '../constants/risk';
 
 const PICKER_VIEWS_WITH_SECONDS = ['year', 'month', 'day', 'hours', 'minutes', 'seconds'];
@@ -240,9 +242,10 @@ function EditRiskValueDialog({ entry, risk, onClose, onSaved }) {
 
 export default function RiskValues() {
   const { locale } = useLocale();
+  const { activeTeam } = useTeam();
   const [searchParams, setSearchParams] = useSearchParams();
   const [risks, setRisks] = useState([]);
-  const [risksLoading, setRisksLoading] = useState(true);
+  const [risksLoading, setRisksLoading] = useState(false);
   const [risksError, setRisksError] = useState(null);
   const [selectedRiskId, setSelectedRiskId] = useState(searchParams.get('riskId') || '');
   const [values, setValues] = useState([]);
@@ -260,6 +263,7 @@ export default function RiskValues() {
   const [deleteError, setDeleteError] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const { showNotification } = useNotification();
+  const activeTeamId = activeTeam?.id || '';
 
   const selectedRisk = useMemo(
     () => risks.find((risk) => risk.id === selectedRiskId) || null,
@@ -267,23 +271,32 @@ export default function RiskValues() {
   );
 
   const loadRiskList = useCallback(async () => {
+    if (!activeTeamId) {
+      setRisks([]);
+      setRisksLoading(false);
+      setRisksError(null);
+      return;
+    }
+
     setRisksLoading(true);
     setRisksError(null);
+    setRisks([]);
 
     try {
-      const data = await listRisks();
+      const data = await listRisks(activeTeamId);
       setRisks(data);
     } catch (err) {
       setRisksError(err.message || 'Failed to load risks.');
     } finally {
       setRisksLoading(false);
     }
-  }, []);
+  }, [activeTeamId]);
 
   const loadValues = useCallback(async () => {
-    if (!selectedRiskId) {
+    if (!selectedRisk) {
       setValues([]);
       setTotalElements(0);
+      setValuesLoading(false);
       return;
     }
 
@@ -291,7 +304,7 @@ export default function RiskValues() {
     setValuesError(null);
 
     try {
-      const data = await listRiskValues(selectedRiskId, {
+      const data = await listRiskValues(selectedRisk.id, {
         page,
         size: rowsPerPage,
         sortField,
@@ -304,33 +317,36 @@ export default function RiskValues() {
     } finally {
       setValuesLoading(false);
     }
-  }, [page, rowsPerPage, selectedRiskId, sortDirection, sortField]);
+  }, [page, rowsPerPage, selectedRisk, sortDirection, sortField]);
 
   useEffect(() => {
-    let active = true;
-
-    listRisks()
-      .then((data) => {
-        if (active) setRisks(data);
-      })
-      .catch((err) => {
-        if (active) setRisksError(err.message || 'Failed to load risks.');
-      })
-      .finally(() => {
-        if (active) setRisksLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+    loadRiskList();
+  }, [loadRiskList]);
 
   useEffect(() => {
-    if (!selectedRiskId) return undefined;
+    if (risksLoading || risksError || !selectedRiskId || !activeTeamId) return;
+    if (!risks.some((risk) => risk.id === selectedRiskId)) {
+      setSelectedRiskId('');
+      setValues([]);
+      setTotalElements(0);
+      setPage(0);
+      setSearchParams({}, { replace: true });
+    }
+  }, [activeTeamId, risks, risksError, risksLoading, selectedRiskId, setSearchParams]);
+
+  useEffect(() => {
+    if (!selectedRisk) {
+      setValues([]);
+      setTotalElements(0);
+      setValuesLoading(false);
+      return undefined;
+    }
 
     let active = true;
+    setValuesLoading(true);
+    setValuesError(null);
 
-    listRiskValues(selectedRiskId, {
+    listRiskValues(selectedRisk.id, {
       page,
       size: rowsPerPage,
       sortField,
@@ -351,7 +367,7 @@ export default function RiskValues() {
     return () => {
       active = false;
     };
-  }, [page, refreshKey, rowsPerPage, selectedRiskId, sortDirection, sortField]);
+  }, [page, refreshKey, rowsPerPage, selectedRisk, sortDirection, sortField]);
 
   const handleRiskChange = (event) => {
     const nextRiskId = event.target.value;
@@ -366,7 +382,7 @@ export default function RiskValues() {
 
   const handleSort = (field) => {
     setPage(0);
-    if (selectedRiskId) setValuesLoading(true);
+    if (selectedRisk) setValuesLoading(true);
     setValuesError(null);
     setSortField(field);
     setSortDirection((current) => (
@@ -375,14 +391,14 @@ export default function RiskValues() {
   };
 
   const handleRowsPerPageChange = (event) => {
-    if (selectedRiskId) setValuesLoading(true);
+    if (selectedRisk) setValuesLoading(true);
     setValuesError(null);
     setRowsPerPage(Number(event.target.value));
     setPage(0);
   };
 
   const refreshCurrentPage = () => {
-    if (selectedRiskId) setValuesLoading(true);
+    if (selectedRisk) setValuesLoading(true);
     setValuesError(null);
     setRefreshKey((current) => current + 1);
   };
@@ -441,7 +457,7 @@ export default function RiskValues() {
         <Box>
           <Typography variant="h1" gutterBottom>Risk Values</Typography>
           <Typography variant="body2" color="text.secondary">
-            Select a risk to review, sort, edit, or delete its logged values.
+            Select a risk in the active team to review, sort, edit, or delete its logged values.
           </Typography>
         </Box>
         <Button
@@ -455,8 +471,13 @@ export default function RiskValues() {
       </Stack>
 
       <Paper sx={{ p: 2.5, mb: 3 }}>
+        {!activeTeam && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Select a team before viewing risk values.
+          </Alert>
+        )}
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
-          <FormControl fullWidth disabled={risksLoading}>
+          <FormControl fullWidth disabled={!activeTeam || risksLoading}>
             <InputLabel id="risk-values-risk-label">Risk</InputLabel>
             <Select
               labelId="risk-values-risk-label"
@@ -481,19 +502,19 @@ export default function RiskValues() {
           </FormControl>
           <Tooltip title="Refresh risks">
             <span>
-              <IconButton onClick={loadRiskList} disabled={risksLoading} size="small">
+              <IconButton onClick={loadRiskList} disabled={!activeTeam || risksLoading} size="small">
                 <RefreshIcon fontSize="small" />
               </IconButton>
             </span>
           </Tooltip>
         </Stack>
-        {risksLoading && (
+        {activeTeam && risksLoading && (
           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 2 }}>
             <CircularProgress size={20} />
             <Typography variant="body2" color="text.secondary">Loading risks...</Typography>
           </Stack>
         )}
-        {!risksLoading && risksError && (
+        {activeTeam && !risksLoading && risksError && (
           <Alert
             severity="error"
             sx={{ mt: 2 }}
@@ -508,7 +529,7 @@ export default function RiskValues() {
         )}
       </Paper>
 
-      {!selectedRiskId && (
+      {activeTeam && !selectedRiskId && (
         <Paper sx={{ p: 4 }}>
           <Typography variant="h3" gutterBottom>Select a risk to view logged values</Typography>
           <Typography variant="body2" color="text.secondary">
@@ -517,7 +538,7 @@ export default function RiskValues() {
         </Paper>
       )}
 
-      {selectedRiskId && (
+      {activeTeam && selectedRisk && (
         <Paper>
           <TableContainer>
             <Table>
@@ -649,7 +670,7 @@ export default function RiskValues() {
             rowsPerPage={rowsPerPage}
             rowsPerPageOptions={[5, 10, 25, 50]}
             onPageChange={(_event, nextPage) => {
-              setValuesLoading(true);
+              if (selectedRisk) setValuesLoading(true);
               setValuesError(null);
               setPage(nextPage);
             }}

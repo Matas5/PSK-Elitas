@@ -14,6 +14,7 @@ import com.riskmonitor.dto.risk.RiskStruct.RiskCreateReq;
 import com.riskmonitor.dto.risk.RiskStruct.RiskResp;
 import com.riskmonitor.dto.risk.RiskStruct.RiskUpdateReq;
 import com.riskmonitor.entity.Risk;
+import com.riskmonitor.entity.Team;
 import com.riskmonitor.exception.OptimisticLockingConflictException;
 import com.riskmonitor.repository.RiskRepository;
 
@@ -26,20 +27,24 @@ import lombok.extern.slf4j.Slf4j;
 public class RiskService {
 
     private final RiskRepository riskRepository;
+    private final TeamService teamService;
 
     // for testing, use dto to avoid sending unnecessary fields
     @Transactional(readOnly = true)
     public Risk getRisk(UUID id, String userId) {
-        return riskRepository.findByIdAndUserId(id, userId)
+        Risk risk = riskRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Risk not found: " + id));
+        teamService.assertUserCanAccessRisk(risk, userId);
+        return risk;
     }
 
     @Async
     @Transactional(readOnly = true)
-    public CompletableFuture<List<RiskResp>> listRisks(String userId) {
+    public CompletableFuture<List<RiskResp>> listRisks(String userId, UUID teamId) {
         log.info("listRisks executing asynchronously on thread {}", Thread.currentThread().getName());
+        teamService.assertUserIsTeamMember(teamId, userId);
         List<RiskResp> result = riskRepository
-                .findAllByUserId(userId, Sort.by(Sort.Direction.ASC, "name"))
+                .findAllByTeamId(teamId, Sort.by(Sort.Direction.ASC, "name"))
                 .stream()
                 .map(RiskResp::from)
                 .toList();
@@ -48,6 +53,7 @@ public class RiskService {
 
     @Transactional
     public Risk createRisk(RiskCreateReq req, String userId) {
+        Team team = teamService.getTeamForMember(req.teamId(), userId);
         validateSelectedBounds(
                 req.hasUpperBounds(),
                 req.hasLowerBounds(),
@@ -71,6 +77,7 @@ public class RiskService {
         BigDecimal upperMax = req.hasUpperBounds() ? req.upperMaxThreshold() : null;
 
         Risk risk = new Risk(
+                team,
                 userId,
                 req.name().trim(),
                 req.category().trim(),
@@ -146,6 +153,7 @@ public class RiskService {
     @Transactional
     public void deleteRisk(UUID id, String userId) {
         Risk risk = getRisk(id, userId);
+        teamService.assertUserCanDeleteRisk(risk, userId);
         riskRepository.delete(risk);
     }
 

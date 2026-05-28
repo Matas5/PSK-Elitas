@@ -1,5 +1,6 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -25,58 +26,59 @@ import CreateRiskDialog from '../components/CreateRiskDialog';
 import LogRiskValueDialog from '../components/LogRiskValueDialog';
 import RiskDetailsDialog from '../components/RiskDetailsDialog';
 import { useNotification } from '../context/NotificationContext';
+import { useTeam } from '../context/TeamContext';
 import {
   formatDirection,
   formatFrequency,
   formatThresholds,
 } from '../constants/risk';
+import { ROUTES } from '../routes';
 
 export default function Risks() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [logValueOpen, setLogValueOpen] = useState(false);
   const [risks, setRisks] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
   const [selectedRisk, setSelectedRisk] = useState(null);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const { showNotification } = useNotification();
+  const { activeTeam } = useTeam();
   const navigate = useNavigate();
+  const activeTeamId = activeTeam?.id || '';
+  const canDeleteRisk = activeTeam?.role === 'OWNER';
 
   const loadRiskList = useCallback(async () => {
+    if (!activeTeamId) {
+      setRisks([]);
+      setLoading(false);
+      setLoadError(null);
+      return;
+    }
+
     setLoading(true);
     setLoadError(null);
 
     try {
-      const data = await listRisks();
+      const data = await listRisks(activeTeamId);
       setRisks(data);
     } catch (err) {
       setLoadError(err.message || 'Failed to load risks.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeTeamId]);
 
   useEffect(() => {
-    let active = true;
-
-    listRisks()
-      .then((data) => {
-        if (active) setRisks(data);
-      })
-      .catch((err) => {
-        if (active) setLoadError(err.message || 'Failed to load risks.');
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
+    setSelectedRisk(null);
+    setEditOpen(false);
+    setLogValueOpen(false);
+    setConfirmDeleteOpen(false);
+    loadRiskList();
+  }, [loadRiskList]);
 
   const handleCreated = (risk) => {
     showNotification(`Risk "${risk.name}" created.`, 'success');
@@ -99,7 +101,7 @@ export default function Risks() {
 
   const handleViewGraph = () => {
     if (!selectedRisk) return;
-    navigate(`/risks/${selectedRisk.id}/graph`);
+    navigate(`${ROUTES.RISK_GRAPHS}?riskId=${selectedRisk.id}`);
   };
 
   const handleValueLogged = () => {
@@ -107,6 +109,10 @@ export default function Risks() {
   };
 
   const handleDeleteRequest = () => {
+    if (!canDeleteRisk) {
+      setDeleteError('Only team owners can delete risks.');
+      return;
+    }
     setDeleteError(null);
     setConfirmDeleteOpen(true);
   };
@@ -155,18 +161,31 @@ export default function Risks() {
           variant="contained"
           startIcon={<AddOutlinedIcon />}
           onClick={() => setCreateOpen(true)}
+          disabled={!activeTeam}
         >
           Create risk
         </Button>
       </Stack>
 
-      {loading && (
+      {!activeTeam && (
+        <Paper sx={{ p: 4 }}>
+          <Typography variant="h3" gutterBottom>No team selected</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Create, join, or select a team to manage risks.
+          </Typography>
+          <Button component={RouterLink} to={ROUTES.TEAMS} variant="contained">
+            Go to teams
+          </Button>
+        </Paper>
+      )}
+
+      {activeTeam && loading && (
         <Paper sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
           <CircularProgress size={32} />
         </Paper>
       )}
 
-      {!loading && loadError && (
+      {activeTeam && !loading && loadError && (
         <Alert
           severity="error"
           action={(
@@ -179,16 +198,16 @@ export default function Risks() {
         </Alert>
       )}
 
-      {!loading && !loadError && risks.length === 0 && (
+      {activeTeam && !loading && !loadError && risks.length === 0 && (
         <Paper sx={{ p: 4 }}>
           <Typography variant="h3" gutterBottom>No risks created yet</Typography>
           <Typography variant="body2" color="text.secondary">
-            Create a risk to start monitoring thresholds and logging frequency.
+            Create a risk in {activeTeam.name} to start monitoring thresholds and logging frequency.
           </Typography>
         </Paper>
       )}
 
-      {!loading && !loadError && risks.length > 0 && (
+      {activeTeam && !loading && !loadError && risks.length > 0 && (
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
@@ -237,6 +256,7 @@ export default function Risks() {
         <CreateRiskDialog
           onClose={() => setCreateOpen(false)}
           onCreated={handleCreated}
+          teamId={activeTeam?.id}
         />
       )}
 
@@ -256,6 +276,7 @@ export default function Risks() {
         onAddValue={handleAddValue}
         onViewGraph={handleViewGraph}
         onDelete={handleDeleteRequest}
+        canDeleteRisk={canDeleteRisk}
         deleting={deleting}
         deleteError={deleteError}
       />

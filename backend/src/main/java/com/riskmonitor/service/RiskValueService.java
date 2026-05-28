@@ -26,6 +26,7 @@ public class RiskValueService {
 
     private final RiskValueRepository riskValueRepository;
     private final RiskRepository riskRepository;
+    private final TeamService teamService;
 
     @Transactional(readOnly = true)
     public List<RiskValue> listValues(UUID riskId, String userId) {
@@ -83,8 +84,10 @@ public class RiskValueService {
     }
 
     private Risk getRiskForUser(UUID riskId, String userId) {
-        return riskRepository.findByIdAndUserId(riskId, userId)
+        Risk risk = riskRepository.findById(riskId)
                 .orElseThrow(() -> new IllegalArgumentException("Risk not found: " + riskId));
+        teamService.assertUserCanAccessRisk(risk, userId);
+        return risk;
     }
 
     private void validateWithinValidityWindow(Risk risk, Instant recordedAt, int index) {

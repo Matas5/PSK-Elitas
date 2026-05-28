@@ -1,14 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link as RouterLink, useParams, useSearchParams } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
+import FormControl from '@mui/material/FormControl';
+import IconButton from '@mui/material/IconButton';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
+import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
+import MuiTooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import {
   LabelList,
   Line,
@@ -23,7 +31,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import dayjs from 'dayjs';
 
-import { getRisk } from '../api/risksApi';
+import { getRisk, listRisks } from '../api/risksApi';
 import { listAllRiskValues } from '../api/riskValuesApi';
 import {
   RISK_LEVELS,
@@ -32,6 +40,7 @@ import {
   needsSeconds,
 } from '../constants/risk';
 import { useLocale } from '../context/LocaleContext.jsx';
+import { useTeam } from '../context/TeamContext';
 import { ROUTES } from '../routes';
 
 const PICKER_VIEWS_WITH_SECONDS = ['year', 'month', 'day', 'hours', 'minutes', 'seconds'];
@@ -168,21 +177,77 @@ function downloadSvgAsPng(container, filename) {
 
 export default function RiskGraph() {
   const { locale } = useLocale();
-  const { riskId } = useParams();
+  const { activeTeam } = useTeam();
+  const { riskId: routeRiskId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedRiskId, setSelectedRiskId] = useState(routeRiskId || searchParams.get('riskId') || '');
+  const [risks, setRisks] = useState([]);
+  const [risksLoading, setRisksLoading] = useState(false);
+  const [risksError, setRisksError] = useState(null);
   const [risk, setRisk] = useState(null);
   const [values, setValues] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(routeRiskId || searchParams.get('riskId')));
   const [loadError, setLoadError] = useState(null);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const chartRef = useRef(null);
+  const activeTeamId = activeTeam?.id || '';
+  const selectedRisk = useMemo(
+    () => risks.find((item) => item.id === selectedRiskId) || null,
+    [risks, selectedRiskId],
+  );
+
+  const loadRiskList = useCallback(async () => {
+    if (!activeTeamId) {
+      setRisks([]);
+      setRisksLoading(false);
+      setRisksError(null);
+      return;
+    }
+
+    setRisksLoading(true);
+    setRisksError(null);
+    setRisks([]);
+
+    try {
+      const data = await listRisks(activeTeamId);
+      setRisks(data);
+    } catch (err) {
+      setRisksError(err.message || 'Failed to load risks.');
+    } finally {
+      setRisksLoading(false);
+    }
+  }, [activeTeamId]);
 
   useEffect(() => {
+    loadRiskList();
+  }, [loadRiskList]);
+
+  useEffect(() => {
+    if (risksLoading || risksError || !selectedRiskId || !activeTeamId) return;
+    if (!risks.some((item) => item.id === selectedRiskId)) {
+      setSelectedRiskId('');
+      setRisk(null);
+      setValues([]);
+      setLoadError(null);
+      setLoading(false);
+      setSearchParams({}, { replace: true });
+    }
+  }, [activeTeamId, risks, risksError, risksLoading, selectedRiskId, setSearchParams]);
+
+  useEffect(() => {
+    if (!selectedRisk) {
+      setRisk(null);
+      setValues([]);
+      setLoading(false);
+      return undefined;
+    }
+
     let active = true;
     setLoading(true);
     setLoadError(null);
 
-    Promise.all([getRisk(riskId), listAllRiskValues(riskId)])
+    Promise.all([getRisk(selectedRisk.id), listAllRiskValues(selectedRisk.id)])
       .then(([riskData, valueData]) => {
         if (!active) return;
         setRisk(riskData);
@@ -193,10 +258,22 @@ export default function RiskGraph() {
       })
       .finally(() => {
         if (active) setLoading(false);
-      });
+    });
 
     return () => { active = false; };
-  }, [riskId]);
+  }, [selectedRisk]);
+
+  const handleRiskChange = (event) => {
+    const nextRiskId = event.target.value;
+    setSelectedRiskId(nextRiskId);
+    setRisk(null);
+    setValues([]);
+    setFromDate('');
+    setToDate('');
+    setLoadError(null);
+    setLoading(Boolean(nextRiskId));
+    setSearchParams(nextRiskId ? { riskId: nextRiskId } : {}, { replace: true });
+  };
 
   const chartData = useMemo(() => {
     if (!risk) return [];
@@ -232,19 +309,104 @@ export default function RiskGraph() {
 
   return (
     <Box>
-      <Button component={RouterLink} to={ROUTES.RISKS} startIcon={<ArrowBackIcon />} sx={{ mb: 2 }}>
-        Back to risks
-      </Button>
+      {routeRiskId && (
+        <Button component={RouterLink} to={ROUTES.RISKS} startIcon={<ArrowBackIcon />} sx={{ mb: 2 }}>
+          Back to risks
+        </Button>
+      )}
 
-      {loading && (
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={2}
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        justifyContent="space-between"
+        sx={{ mb: 3 }}
+      >
+        <Box>
+          <Typography variant="h1" gutterBottom>Risk Graphs</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Select a risk in the active team to view its logged values as a threshold-aware graph.
+          </Typography>
+        </Box>
+      </Stack>
+
+      <Paper sx={{ p: 2.5, mb: 3 }}>
+        {!activeTeam && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Select a team before viewing risk graphs.
+          </Alert>
+        )}
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
+          <FormControl fullWidth disabled={!activeTeam || risksLoading}>
+            <InputLabel id="risk-graphs-risk-label">Risk</InputLabel>
+            <Select
+              labelId="risk-graphs-risk-label"
+              label="Risk"
+              value={selectedRiskId}
+              onChange={handleRiskChange}
+            >
+              <MenuItem value="">
+                <em>Select a risk</em>
+              </MenuItem>
+              {selectedRiskId && !risks.some((item) => item.id === selectedRiskId) && (
+                <MenuItem value={selectedRiskId} disabled>
+                  Loading selected risk...
+                </MenuItem>
+              )}
+              {risks.map((item) => (
+                <MenuItem key={item.id} value={item.id}>
+                  {item.name} ({item.measurementUnit})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <MuiTooltip title="Refresh risks">
+            <span>
+              <IconButton onClick={loadRiskList} disabled={!activeTeam || risksLoading} size="small">
+                <RefreshIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </MuiTooltip>
+        </Stack>
+        {activeTeam && risksLoading && (
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 2 }}>
+            <CircularProgress size={20} />
+            <Typography variant="body2" color="text.secondary">Loading risks...</Typography>
+          </Stack>
+        )}
+        {activeTeam && !risksLoading && risksError && (
+          <Alert
+            severity="error"
+            sx={{ mt: 2 }}
+            action={(
+              <Button color="inherit" size="small" onClick={loadRiskList}>
+                Retry
+              </Button>
+            )}
+          >
+            {risksError}
+          </Alert>
+        )}
+      </Paper>
+
+      {activeTeam && !selectedRiskId && (
+        <Paper sx={{ p: 4 }}>
+          <Typography variant="h3" gutterBottom>Select a risk to view its graph</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Choose a risk from the selector above to load its measurement graph.
+          </Typography>
+        </Paper>
+      )}
+
+      {activeTeam && selectedRisk && loading && (
         <Paper sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
           <CircularProgress size={32} />
         </Paper>
       )}
 
-      {!loading && loadError && <Alert severity="error">{loadError}</Alert>}
+      {activeTeam && selectedRisk && !loading && loadError && <Alert severity="error">{loadError}</Alert>}
 
-      {!loading && !loadError && risk && (
+      {activeTeam && selectedRisk && !loading && !loadError && risk && (
         <>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
@@ -254,7 +416,7 @@ export default function RiskGraph() {
             sx={{ mb: 3 }}
           >
             <Box>
-              <Typography variant="h1" gutterBottom>{risk.name}</Typography>
+              <Typography variant="h2" gutterBottom>{risk.name}</Typography>
               <Typography variant="body2" color="text.secondary">
                 {risk.category || 'Uncategorized'}
               </Typography>

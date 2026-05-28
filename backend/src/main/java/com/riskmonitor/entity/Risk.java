@@ -11,7 +11,10 @@ import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
 
@@ -25,6 +28,10 @@ public class Risk {
 
     @Column(name = "user_id")
     private String userId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id")
+    private Team team;
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
@@ -76,6 +83,7 @@ public class Risk {
     }
 
     public Risk(
+            Team team,
             String userId,
             String name,
             String category,
@@ -92,6 +100,7 @@ public class Risk {
     ) {
         this.id = UUID.randomUUID();
         this.userId = userId;
+        this.team = team;
         this.name = name;
         this.category = category;
         this.description = description;
@@ -107,6 +116,26 @@ public class Risk {
         this.modifyDetails = ModifyDetails.createDetails();
         validateThresholds();
         validateValidityPeriod();
+    }
+
+    public Risk(
+            String userId,
+            String name,
+            String category,
+            String description,
+            Long timeIntervalValue,
+            RiskPeriod timeIntervalUnit,
+            String measurementUnit,
+            BigDecimal lowerMinThreshold,
+            BigDecimal lowerMidThreshold,
+            BigDecimal upperMidThreshold,
+            BigDecimal upperMaxThreshold,
+            Instant validFrom,
+            Instant validUntil
+    ) {
+        this(null, userId, name, category, description, timeIntervalValue, timeIntervalUnit,
+                measurementUnit, lowerMinThreshold, lowerMidThreshold, upperMidThreshold,
+                upperMaxThreshold, validFrom, validUntil);
     }
 
     public void update(UpdateRiskFields modifiedRisk) {
@@ -177,6 +206,7 @@ public class Risk {
     // Getters
     public UUID getId() { return id; }
     public String getUserId() { return userId; }
+    public Team getTeam() { return team; }
     public String getName() { return name; }
     public String getCategory() { return category; }
     public String getDescription() { return description; }
