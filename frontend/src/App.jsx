@@ -68,6 +68,15 @@ export default function App() {
         />
 
         <Route
+          path={ROUTES.RISK_GRAPHS}
+          element={(
+            <RequireAuth>
+              <AuthedShell><RiskGraph /></AuthedShell>
+            </RequireAuth>
+          )}
+        />
+
+        <Route
           path={ROUTES.RISK_GRAPH}
           element={(
             <RequireAuth>

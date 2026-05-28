@@ -1,14 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link as RouterLink, useParams } from 'react-router-dom';
+import { Link as RouterLink, useParams, useSearchParams } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
+import FormControl from '@mui/material/FormControl';
+import IconButton from '@mui/material/IconButton';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
+import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
+import MuiTooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import {
   LabelList,
   Line,
@@ -23,7 +30,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import dayjs from 'dayjs';
 
-import { getRisk } from '../api/risksApi';
+import { getRisk, listRisks } from '../api/risksApi';
 import { listAllRiskValues } from '../api/riskValuesApi';
 import {
   RISK_LEVELS,
@@ -168,21 +175,59 @@ function downloadSvgAsPng(container, filename) {
 
 export default function RiskGraph() {
   const { locale } = useLocale();
-  const { riskId } = useParams();
+  const { riskId: routeRiskId } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [selectedRiskId, setSelectedRiskId] = useState(routeRiskId || searchParams.get('riskId') || '');
+  const [risks, setRisks] = useState([]);
+  const [risksLoading, setRisksLoading] = useState(true);
+  const [risksError, setRisksError] = useState(null);
   const [risk, setRisk] = useState(null);
   const [values, setValues] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(routeRiskId || searchParams.get('riskId')));
   const [loadError, setLoadError] = useState(null);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const chartRef = useRef(null);
 
+  const loadRiskList = async () => {
+    setRisksLoading(true);
+    setRisksError(null);
+
+    try {
+      const data = await listRisks();
+      setRisks(data);
+    } catch (err) {
+      setRisksError(err.message || 'Failed to load risks.');
+    } finally {
+      setRisksLoading(false);
+    }
+  };
+
   useEffect(() => {
     let active = true;
-    setLoading(true);
-    setLoadError(null);
 
-    Promise.all([getRisk(riskId), listAllRiskValues(riskId)])
+    listRisks()
+      .then((data) => {
+        if (active) setRisks(data);
+      })
+      .catch((err) => {
+        if (active) setRisksError(err.message || 'Failed to load risks.');
+      })
+      .finally(() => {
+        if (active) setRisksLoading(false);
+      });
+
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedRiskId) {
+      return undefined;
+    }
+
+    let active = true;
+
+    Promise.all([getRisk(selectedRiskId), listAllRiskValues(selectedRiskId)])
       .then(([riskData, valueData]) => {
         if (!active) return;
         setRisk(riskData);
@@ -196,7 +241,19 @@ export default function RiskGraph() {
       });
 
     return () => { active = false; };
-  }, [riskId]);
+  }, [selectedRiskId]);
+
+  const handleRiskChange = (event) => {
+    const nextRiskId = event.target.value;
+    setSelectedRiskId(nextRiskId);
+    setRisk(null);
+    setValues([]);
+    setFromDate('');
+    setToDate('');
+    setLoadError(null);
+    setLoading(Boolean(nextRiskId));
+    setSearchParams(nextRiskId ? { riskId: nextRiskId } : {}, { replace: true });
+  };
 
   const chartData = useMemo(() => {
     if (!risk) return [];
@@ -232,19 +289,99 @@ export default function RiskGraph() {
 
   return (
     <Box>
-      <Button component={RouterLink} to={ROUTES.RISKS} startIcon={<ArrowBackIcon />} sx={{ mb: 2 }}>
-        Back to risks
-      </Button>
+      {routeRiskId && (
+        <Button component={RouterLink} to={ROUTES.RISKS} startIcon={<ArrowBackIcon />} sx={{ mb: 2 }}>
+          Back to risks
+        </Button>
+      )}
 
-      {loading && (
+      <Stack
+        direction={{ xs: 'column', sm: 'row' }}
+        spacing={2}
+        alignItems={{ xs: 'flex-start', sm: 'center' }}
+        justifyContent="space-between"
+        sx={{ mb: 3 }}
+      >
+        <Box>
+          <Typography variant="h1" gutterBottom>Risk Graphs</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Select a risk to view its logged values as a threshold-aware graph.
+          </Typography>
+        </Box>
+      </Stack>
+
+      <Paper sx={{ p: 2.5, mb: 3 }}>
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
+          <FormControl fullWidth disabled={risksLoading}>
+            <InputLabel id="risk-graphs-risk-label">Risk</InputLabel>
+            <Select
+              labelId="risk-graphs-risk-label"
+              label="Risk"
+              value={selectedRiskId}
+              onChange={handleRiskChange}
+            >
+              <MenuItem value="">
+                <em>Select a risk</em>
+              </MenuItem>
+              {selectedRiskId && !risks.some((item) => item.id === selectedRiskId) && (
+                <MenuItem value={selectedRiskId} disabled>
+                  Loading selected risk...
+                </MenuItem>
+              )}
+              {risks.map((item) => (
+                <MenuItem key={item.id} value={item.id}>
+                  {item.name} ({item.measurementUnit})
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <MuiTooltip title="Refresh risks">
+            <span>
+              <IconButton onClick={loadRiskList} disabled={risksLoading} size="small">
+                <RefreshIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </MuiTooltip>
+        </Stack>
+        {risksLoading && (
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 2 }}>
+            <CircularProgress size={20} />
+            <Typography variant="body2" color="text.secondary">Loading risks...</Typography>
+          </Stack>
+        )}
+        {!risksLoading && risksError && (
+          <Alert
+            severity="error"
+            sx={{ mt: 2 }}
+            action={(
+              <Button color="inherit" size="small" onClick={loadRiskList}>
+                Retry
+              </Button>
+            )}
+          >
+            {risksError}
+          </Alert>
+        )}
+      </Paper>
+
+      {!selectedRiskId && (
+        <Paper sx={{ p: 4 }}>
+          <Typography variant="h3" gutterBottom>Select a risk to view its graph</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Choose a risk from the selector above to load its measurement graph.
+          </Typography>
+        </Paper>
+      )}
+
+      {selectedRiskId && loading && (
         <Paper sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
           <CircularProgress size={32} />
         </Paper>
       )}
 
-      {!loading && loadError && <Alert severity="error">{loadError}</Alert>}
+      {selectedRiskId && !loading && loadError && <Alert severity="error">{loadError}</Alert>}
 
-      {!loading && !loadError && risk && (
+      {selectedRiskId && !loading && !loadError && risk && (
         <>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
@@ -254,7 +391,7 @@ export default function RiskGraph() {
             sx={{ mb: 3 }}
           >
             <Box>
-              <Typography variant="h1" gutterBottom>{risk.name}</Typography>
+              <Typography variant="h2" gutterBottom>{risk.name}</Typography>
               <Typography variant="body2" color="text.secondary">
                 {risk.category || 'Uncategorized'}
               </Typography>

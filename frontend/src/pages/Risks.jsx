@@ -30,6 +30,7 @@ import {
   formatFrequency,
   formatThresholds,
 } from '../constants/risk';
+import { ROUTES } from '../routes';
 
 export default function Risks() {
   const [createOpen, setCreateOpen] = useState(false);
@@ -99,7 +100,7 @@ export default function Risks() {
 
   const handleViewGraph = () => {
     if (!selectedRisk) return;
-    navigate(`/risks/${selectedRisk.id}/graph`);
+    navigate(`${ROUTES.RISK_GRAPHS}?riskId=${selectedRisk.id}`);
   };
 
   const handleValueLogged = () => {

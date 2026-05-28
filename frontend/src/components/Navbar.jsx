@@ -17,6 +17,7 @@ import Button from '@mui/material/Button';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
+import ShowChartOutlinedIcon from '@mui/icons-material/ShowChartOutlined';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -29,6 +30,7 @@ import { ROUTES } from '../routes';
 const PRIMARY_NAV = [
   { to: ROUTES.RISKS, label: 'Risks', icon: <WarningAmberOutlinedIcon /> },
   { to: ROUTES.RISK_VALUES, label: 'Risk Values', icon: <TimelineOutlinedIcon /> },
+  { to: ROUTES.RISK_GRAPHS, label: 'Risk Graphs', icon: <ShowChartOutlinedIcon /> },
   { to: ROUTES.REPORTS, label: 'Reports', icon: <AssessmentOutlinedIcon /> },
 ];
 
@@ -81,7 +83,7 @@ function NavListItem({ to, label, icon, onNavigate }) {
   );
 }
 
-function DrawerContent({ user, provider, onLogout, onNavigate }) {
+function DrawerContent({ user, onLogout, onNavigate }) {
   const displayName = user?.displayName || user?.username || 'User';
   const email = user?.email;
   const initial = displayName.charAt(0).toUpperCase();
@@ -229,7 +231,7 @@ function DrawerContent({ user, provider, onLogout, onNavigate }) {
 }
 
 export default function Navbar() {
-  const { user, provider, logout } = useAuth();
+  const { user, logout } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -316,7 +318,7 @@ export default function Navbar() {
           '& .MuiDrawer-paper': drawerPaperSx,
         }}
       >
-        <DrawerContent user={user} provider={provider} onLogout={handleLogout} />
+        <DrawerContent user={user} onLogout={handleLogout} />
       </Drawer>
 
       <Drawer
@@ -334,7 +336,6 @@ export default function Navbar() {
       >
         <DrawerContent
           user={user}
-          provider={provider}
           onLogout={handleLogout}
           onNavigate={handleMobileNavigate}
         />

@@ -3,6 +3,7 @@ export const ROUTES = Object.freeze({
   LOGIN: '/login',
   REGISTER: '/register',
   RISKS: '/risks',
+  RISK_GRAPHS: '/risk-graphs',
   RISK_GRAPH: '/risks/:riskId/graph',
   RISK_VALUES: '/risk-values',
   REPORTS: '/reports',
