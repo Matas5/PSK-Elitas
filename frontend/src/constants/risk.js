@@ -34,11 +34,11 @@ export function needsSeconds(riskOrUnit) {
   return unitOf(riskOrUnit) === 'SECOND';
 }
 
-export function formatRiskDateTime(value, riskOrUnit) {
+export function formatRiskDateTime(value, riskOrUnit, locale = 'lt') {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
-  return new Intl.DateTimeFormat('lt', {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: 'short',
     timeStyle: needsSeconds(riskOrUnit) ? 'medium' : 'short',
   }).format(date);
@@ -53,11 +53,6 @@ export function toInputDateTime(value, riskOrUnit) {
     `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
     `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   return needsSeconds(riskOrUnit) ? `${base}:${pad(date.getSeconds())}` : base;
-}
-
-export function dateInputProps(riskOrUnit) {
-  const base = { lang: 'lt' };
-  return needsSeconds(riskOrUnit) ? { ...base, step: 1 } : base;
 }
 
 function formatUnitLabel(value, count) {

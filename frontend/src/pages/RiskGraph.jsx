@@ -7,7 +7,6 @@ import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import {
@@ -21,22 +20,33 @@ import {
   YAxis,
 } from 'recharts';
 
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import dayjs from 'dayjs';
+
 import { getRisk } from '../api/risksApi';
 import { listAllRiskValues } from '../api/riskValuesApi';
 import {
   RISK_LEVELS,
   classifyRiskLevel,
-  dateInputProps,
   formatRiskDateTime,
   needsSeconds,
 } from '../constants/risk';
+import { useLocale } from '../context/LocaleContext.jsx';
 import { ROUTES } from '../routes';
 
-function formatTick(time, withSeconds) {
-  return new Intl.DateTimeFormat('lt', {
+const PICKER_VIEWS_WITH_SECONDS = ['year', 'month', 'day', 'hours', 'minutes', 'seconds'];
+const PICKER_VIEWS = ['year', 'month', 'day', 'hours', 'minutes'];
+
+function pickerToInputString(d, withSeconds) {
+  if (!d) return '';
+  return withSeconds ? d.format('YYYY-MM-DDTHH:mm:ss') : d.format('YYYY-MM-DDTHH:mm');
+}
+
+function formatTick(time, withSeconds, locale) {
+  return new Intl.DateTimeFormat(locale, {
     month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit',
-    hour12: false,
+    hour12: locale === 'en',
     ...(withSeconds ? { second: '2-digit' } : {}),
   }).format(new Date(time));
 }
@@ -99,14 +109,14 @@ function ValuePill({ x, y, value }) {
   );
 }
 
-function ChartTooltip({ active, payload, risk }) {
+function ChartTooltip({ active, payload, risk, locale }) {
   if (!active || !payload || payload.length === 0) return null;
   const point = payload[0].payload;
   const level = RISK_LEVELS[point.level];
   return (
     <Paper sx={{ p: 1.5, minWidth: 160 }}>
       <Typography variant="caption" color="text.secondary">
-        {formatRiskDateTime(point.time, risk)}
+        {formatRiskDateTime(point.time, risk, locale)}
       </Typography>
       <Typography variant="body2" sx={{ fontWeight: 600 }}>
         {point.value}{risk?.measurementUnit ? ` ${risk.measurementUnit}` : ''}
@@ -157,6 +167,7 @@ function downloadSvgAsPng(container, filename) {
 }
 
 export default function RiskGraph() {
+  const { locale } = useLocale();
   const { riskId } = useParams();
   const [risk, setRisk] = useState(null);
   const [values, setValues] = useState([]);
@@ -258,21 +269,21 @@ export default function RiskGraph() {
               sx={{ mb: 3 }}
               alignItems={{ xs: 'stretch', sm: 'center' }}
             >
-              <TextField
-                label="From" type="datetime-local"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                inputProps={dateInputProps(risk)}
-                fullWidth
+              <DateTimePicker
+                label="From"
+                value={fromDate ? dayjs(fromDate) : null}
+                onChange={(d) => setFromDate(pickerToInputString(d, needsSeconds(risk)))}
+                views={needsSeconds(risk) ? PICKER_VIEWS_WITH_SECONDS : PICKER_VIEWS}
+                sx={{ flex: 1 }}
+                slotProps={{ textField: { fullWidth: true } }}
               />
-              <TextField
-                label="To" type="datetime-local"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                InputLabelProps={{ shrink: true }}
-                inputProps={dateInputProps(risk)}
-                fullWidth
+              <DateTimePicker
+                label="To"
+                value={toDate ? dayjs(toDate) : null}
+                onChange={(d) => setToDate(pickerToInputString(d, needsSeconds(risk)))}
+                views={needsSeconds(risk) ? PICKER_VIEWS_WITH_SECONDS : PICKER_VIEWS}
+                sx={{ flex: 1 }}
+                slotProps={{ textField: { fullWidth: true } }}
               />
               <Button
                 onClick={handleDownload}
@@ -294,7 +305,7 @@ export default function RiskGraph() {
                     <XAxis
                       dataKey="time" type="number" scale="time"
                       domain={['dataMin', 'dataMax']}
-                      tickFormatter={(t) => formatTick(t, needsSeconds(risk))}
+                      tickFormatter={(t) => formatTick(t, needsSeconds(risk), locale)}
                       tick={{ fontSize: 12 }} tickMargin={8}
                     />
                     <YAxis
@@ -307,7 +318,7 @@ export default function RiskGraph() {
                         style: { textAnchor: 'middle', fontSize: 15, fontWeight: 700, fill: '#424242' },
                       }}
                     />
-                    <Tooltip content={<ChartTooltip risk={risk} />}
+                    <Tooltip content={<ChartTooltip risk={risk} locale={locale} />}
                              cursor={{ stroke: '#bdbdbd', strokeDasharray: '3 3' }} />
                     {thresholds.map((t) => (
                       <ReferenceLine

@@ -12,14 +12,25 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import dayjs from 'dayjs';
+
 import { createRisk, updateRisk } from '../api/risksApi';
 import ConflictDialog from './ConflictDialog';
 import {
   TIME_INTERVAL_UNITS,
   RISK_DIRECTIONS,
-  dateInputProps,
+  needsSeconds,
   toInputDateTime,
 } from '../constants/risk';
+
+const PICKER_VIEWS_WITH_SECONDS = ['year', 'month', 'day', 'hours', 'minutes', 'seconds'];
+const PICKER_VIEWS = ['year', 'month', 'day', 'hours', 'minutes'];
+
+function pickerToInputString(d, withSeconds) {
+  if (!d) return '';
+  return withSeconds ? d.format('YYYY-MM-DDTHH:mm:ss') : d.format('YYYY-MM-DDTHH:mm');
+}
 
 const NAME_MIN = 3;
 const NAME_MAX = 100;
@@ -128,6 +139,19 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
   const update = (field) => (event) => {
     const value = event.target.value;
     setForm((prev) => ({ ...prev, [field]: value }));
+    setErrors((prev) => {
+      if (!prev[field]) return prev;
+      const next = { ...prev };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const updateDate = (field) => (d) => {
+    setForm((prev) => ({
+      ...prev,
+      [field]: pickerToInputString(d, needsSeconds(prev.timeIntervalUnit)),
+    }));
     setErrors((prev) => {
       if (!prev[field]) return prev;
       const next = { ...prev };
@@ -496,28 +520,34 @@ export default function CreateRiskDialog({ risk = null, onClose, onCreated, onUp
           <Divider />
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField
+            <DateTimePicker
               label="Valid from"
-              type="datetime-local"
-              required
-              value={form.validFrom}
-              onChange={update('validFrom')}
-              error={Boolean(errors.validFrom)}
-              helperText={errors.validFrom || ' '}
-              InputLabelProps={{ shrink: true }}
-              inputProps={dateInputProps(form.timeIntervalUnit)}
+              value={form.validFrom ? dayjs(form.validFrom) : null}
+              onChange={updateDate('validFrom')}
+              views={needsSeconds(form.timeIntervalUnit) ? PICKER_VIEWS_WITH_SECONDS : PICKER_VIEWS}
               sx={{ flex: 1 }}
+              slotProps={{
+                textField: {
+                  required: true,
+                  fullWidth: true,
+                  error: Boolean(errors.validFrom),
+                  helperText: errors.validFrom || ' ',
+                },
+              }}
             />
-            <TextField
+            <DateTimePicker
               label="Valid until"
-              type="datetime-local"
-              value={form.validUntil}
-              onChange={update('validUntil')}
-              error={Boolean(errors.validUntil)}
-              helperText={errors.validUntil || 'Optional'}
-              InputLabelProps={{ shrink: true }}
-              inputProps={dateInputProps(form.timeIntervalUnit)}
+              value={form.validUntil ? dayjs(form.validUntil) : null}
+              onChange={updateDate('validUntil')}
+              views={needsSeconds(form.timeIntervalUnit) ? PICKER_VIEWS_WITH_SECONDS : PICKER_VIEWS}
               sx={{ flex: 1 }}
+              slotProps={{
+                textField: {
+                  fullWidth: true,
+                  error: Boolean(errors.validUntil),
+                  helperText: errors.validUntil || 'Optional',
+                },
+              }}
             />
           </Stack>
 

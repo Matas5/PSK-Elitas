@@ -21,6 +21,7 @@ import {
   formatFrequency,
   formatRiskDateTime,
 } from '../constants/risk';
+import { useLocale } from '../context/LocaleContext.jsx';
 import { ROUTES } from '../routes';
 
 function hasValue(value) {
@@ -77,6 +78,7 @@ export default function RiskDetailsDialog({
   deleting = false,
   deleteError = null,
 }) {
+  const { locale } = useLocale();
   if (!risk) return null;
 
   return (
@@ -122,8 +124,8 @@ export default function RiskDetailsDialog({
           <Divider />
 
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <ReadOnlyField label="Valid from" value={formatRiskDateTime(risk.validFrom, risk)} />
-            <ReadOnlyField label="Valid until" value={formatRiskDateTime(risk.validUntil, risk)} />
+            <ReadOnlyField label="Valid from" value={formatRiskDateTime(risk.validFrom, risk, locale)} />
+            <ReadOnlyField label="Valid until" value={formatRiskDateTime(risk.validUntil, risk, locale)} />
           </Stack>
 
           <Divider />
