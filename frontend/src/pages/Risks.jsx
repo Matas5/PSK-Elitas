@@ -18,13 +18,16 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 
-import { deleteRisk, listRisks } from '../api/risksApi';
+import { deleteRisk, getSortStrategy, listRisks, setSortStrategy } from '../api/risksApi';
 import CreateRiskDialog from '../components/CreateRiskDialog';
 import LogRiskValueDialog from '../components/LogRiskValueDialog';
 import RiskDetailsDialog from '../components/RiskDetailsDialog';
+import RiskLevelIndicator from '../components/RiskLevelIndicator';
 import { useNotification } from '../context/NotificationContext';
 import { useTeam } from '../context/TeamContext';
 import {
@@ -33,6 +36,12 @@ import {
   formatThresholds,
 } from '../constants/risk';
 import { ROUTES } from '../routes';
+
+// labels for the backend strategy bean names
+const STRATEGY_LABELS = {
+  highCount: 'By high-risk count',
+  average: 'By average severity',
+};
 
 export default function Risks() {
   const [createOpen, setCreateOpen] = useState(false);
@@ -45,6 +54,9 @@ export default function Risks() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+  const [strategy, setStrategy] = useState('');
+  const [strategies, setStrategies] = useState([]);
+  const [switching, setSwitching] = useState(false);
   const { showNotification } = useNotification();
   const { activeTeam } = useTeam();
   const navigate = useNavigate();
@@ -79,6 +91,31 @@ export default function Risks() {
     setConfirmDeleteOpen(false);
     loadRiskList();
   }, [loadRiskList]);
+
+  useEffect(() => {
+    getSortStrategy()
+      .then(({ active, available }) => {
+        setStrategy(active);
+        setStrategies(available || []);
+      })
+      .catch(() => {
+        // no toggle if this fails, not fatal
+      });
+  }, []);
+
+  const handleStrategyChange = async (_event, next) => {
+    if (!next || next === strategy || switching) return;
+    setSwitching(true);
+    try {
+      const { active } = await setSortStrategy(next);
+      setStrategy(active);
+      await loadRiskList();
+    } catch (err) {
+      showNotification(err.message || 'Failed to switch ranking strategy.', 'error');
+    } finally {
+      setSwitching(false);
+    }
+  };
 
   const handleCreated = (risk) => {
     showNotification(`Risk "${risk.name}" created.`, 'success');
@@ -167,6 +204,33 @@ export default function Risks() {
         </Button>
       </Stack>
 
+      {activeTeam && strategies.length > 1 && (
+        <Stack
+          direction="row"
+          spacing={1.5}
+          alignItems="center"
+          flexWrap="wrap"
+          sx={{ mb: 2 }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            Ranking strategy
+          </Typography>
+          <ToggleButtonGroup
+            size="small"
+            exclusive
+            value={strategy}
+            onChange={handleStrategyChange}
+            disabled={switching}
+          >
+            {strategies.map((name) => (
+              <ToggleButton key={name} value={name}>
+                {STRATEGY_LABELS[name] || name}
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+        </Stack>
+      )}
+
       {!activeTeam && (
         <Paper sx={{ p: 4 }}>
           <Typography variant="h3" gutterBottom>No team selected</Typography>
@@ -236,9 +300,12 @@ export default function Risks() {
                   sx={{ cursor: 'pointer' }}
                 >
                   <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                      {risk.name}
-                    </Typography>
+                    <Stack direction="row" spacing={1.25} alignItems="center">
+                      <RiskLevelIndicator level={risk.level} />
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        {risk.name}
+                      </Typography>
+                    </Stack>
                   </TableCell>
                   <TableCell>{risk.category || 'Uncategorized'}</TableCell>
                   <TableCell>{formatFrequency(risk)}</TableCell>

@@ -131,21 +131,25 @@ public class DemoDataSeeder implements CommandLineRunner {
 
         List<Risk> savedRisks = riskRepo.saveAll(risks);
 
-        double[] curve = {
-                0.04, 0.08, 0.16, 0.28, 0.42, 0.62, 0.84,
-                1.05, 1.15, 0.95, 0.72, 0.50, 0.30, 0.18, 0.10
+        // one severity profile per risk (0=LOW, 1=MEDIUM, 2=HIGH), same order as the risks.
+        // deliberately different so the two strategies rank and colour them differently.
+        int[][] severityProfiles = {
+                {0, 1, 2, 2, 1, 2, 2, 1, 2, 2, 0, 2, 2, 2, 0}, // Population density (9 HIGH, avg 1.40)
+                {0, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 0, 0}, // API latency P95   (6 HIGH, avg 1.20)
+                {1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1}, // Supplier delay     (1 HIGH, avg 1.07)
+                {0, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2}, // Monthly budget burn(7 HIGH, avg 0.93)
+                {0, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1}, // Security incidents (1 HIGH, avg 1.00)
         };
-        long stepHours = (60L * 24) / curve.length;
+        int pointsPerRisk = severityProfiles[0].length;
+        long stepHours = (60L * 24) / pointsPerRisk;
 
-        List<RiskValue> allValues = new ArrayList<>(savedRisks.size() * curve.length);
-        for (Risk risk : savedRisks) {
-            BigDecimal upperMax = risk.getUpperMaxThreshold();
-            for (int i = 0; i < curve.length; i++) {
+        List<RiskValue> allValues = new ArrayList<>(savedRisks.size() * pointsPerRisk);
+        for (int r = 0; r < savedRisks.size(); r++) {
+            Risk risk = savedRisks.get(r);
+            int[] profile = severityProfiles[r];
+            for (int i = 0; i < profile.length; i++) {
                 Instant when = validFrom.plus(stepHours * (long) i, ChronoUnit.HOURS);
-                BigDecimal value = upperMax
-                        .multiply(BigDecimal.valueOf(curve[i]))
-                        .setScale(4, RoundingMode.HALF_UP);
-                allValues.add(new RiskValue(risk, value, when));
+                allValues.add(new RiskValue(risk, valueForSeverity(risk, profile[i]), when));
             }
         }
 
@@ -153,5 +157,17 @@ public class DemoDataSeeder implements CommandLineRunner {
 
         log.info("Demo data seeded: user={}, risks={}, values={}",
                 demoUserId, savedRisks.size(), allValues.size());
+    }
+
+    // builds a reading that lands in the requested band for the risk's upper thresholds
+    private static BigDecimal valueForSeverity(Risk risk, int severity) {
+        BigDecimal upperMid = risk.getUpperMidThreshold();
+        BigDecimal upperMax = risk.getUpperMaxThreshold();
+        BigDecimal value = switch (severity) {
+            case 2 -> upperMax.multiply(new BigDecimal("1.10"));               // HIGH: above max
+            case 1 -> upperMid.add(upperMax).divide(BigDecimal.valueOf(2));    // MEDIUM: mid band
+            default -> upperMid.multiply(new BigDecimal("0.50"));              // LOW: below mid
+        };
+        return value.setScale(4, RoundingMode.HALF_UP);
     }
 }

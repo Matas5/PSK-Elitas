@@ -17,6 +17,7 @@ import com.riskmonitor.entity.Risk;
 import com.riskmonitor.entity.Team;
 import com.riskmonitor.exception.OptimisticLockingConflictException;
 import com.riskmonitor.repository.RiskRepository;
+import com.riskmonitor.service.ranking.RiskSortStrategySelector;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class RiskService {
 
     private final RiskRepository riskRepository;
     private final TeamService teamService;
+    private final RiskSortStrategySelector sortStrategySelector;
 
     // for testing, use dto to avoid sending unnecessary fields
     @Transactional(readOnly = true)
@@ -43,10 +45,12 @@ public class RiskService {
     public CompletableFuture<List<RiskResp>> listRisks(String userId, UUID teamId) {
         log.info("listRisks executing asynchronously on thread {}", Thread.currentThread().getName());
         teamService.assertUserIsTeamMember(teamId, userId);
-        List<RiskResp> result = riskRepository
-                .findAllByTeamId(teamId, Sort.by(Sort.Direction.ASC, "name"))
+        List<Risk> risks = riskRepository
+                .findAllByTeamId(teamId, Sort.by(Sort.Direction.ASC, "name"));
+        List<RiskResp> result = sortStrategySelector.current()
+                .rank(risks)
                 .stream()
-                .map(RiskResp::from)
+                .map(ranked -> RiskResp.from(ranked.risk(), ranked.level()))
                 .toList();
         return CompletableFuture.completedFuture(result);
     }

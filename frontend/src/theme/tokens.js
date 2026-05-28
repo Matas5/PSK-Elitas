@@ -43,10 +43,19 @@ const risk = {
   },
 };
 
+// risk-list row indicator: bright shape on a dark square tile so it pops.
+// brighter than the `risk` colours above, which stay for the graph/chips.
+const riskIndicator = {
+  tile: '#161E2A', // dark navy backing square
+  low: { shape: '#2EE57F' },    // bright limey mint green
+  medium: { shape: '#FFC400' }, // bright construction yellow
+  high: { shape: '#E11D48' },   // magenta danger red
+};
+
 const effects = {
   scrollbarThumb: 'rgba(0, 0, 0, 0.18)',
   cardShadow: '0 1px 2px rgba(0, 0, 0, 0.04)',
 };
 
-export const tokens = { brand, neutral, text, risk, effects };
+export const tokens = { brand, neutral, text, risk, riskIndicator, effects };
 export default tokens;

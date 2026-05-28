@@ -118,9 +118,14 @@ public final class RiskStruct {
             Instant createdAt,
             String modifiedBy,
             Instant modifiedAt,
-            Long version
+            Long version,
+            RiskLevel level
     ) {
         public static RiskResp from(Risk risk) {
+            return from(risk, null);
+        }
+
+        public static RiskResp from(Risk risk, RiskLevel level) {
             var modifyDetails = risk.getModifyDetails();
             return new RiskResp(
                     risk.getId(),
@@ -141,7 +146,8 @@ public final class RiskStruct {
                     modifyDetails.getCreatedAt(),
                     modifyDetails.getModifiedBy(),
                     modifyDetails.getModifiedAt(),
-                    risk.getVersion()
+                    risk.getVersion(),
+                    level
             );
         }
     }
