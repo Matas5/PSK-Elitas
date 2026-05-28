@@ -18,8 +18,8 @@ public class Risk {
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "google_user_id")
-    private String googleUserId;
+    @Column(name = "user_id")
+    private String userId;
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
@@ -93,8 +93,8 @@ public class RiskValue {
 
 ```java
 public interface RiskRepository extends JpaRepository<Risk, UUID> {
-    Optional<Risk> findByIdAndGoogleUserId(UUID id, String googleUserId);
-    List<Risk> findAllByGoogleUserId(String googleUserId, Sort sort);
+    Optional<Risk> findByIdAndUserId(UUID id, String userId);
+    List<Risk> findAllByUserId(String userId, Sort sort);
 }
 ```
 
@@ -120,19 +120,19 @@ public interface RiskValueRepository extends JpaRepository<RiskValue, UUID> {
 
 ```java
 @Transactional(readOnly = true)
-public Risk getRisk(UUID id, String googleUserId) { ... }
+public Risk getRisk(UUID id, String userId) { ... }
 
 @Transactional(readOnly = true)
-public List<Risk> listRisks(String googleUserId) { ... }
+public List<Risk> listRisks(String userId) { ... }
 
 @Transactional
-public Risk createRisk(RiskCreateReq req, String googleUserId) { ... }
+public Risk createRisk(RiskCreateReq req, String userId) { ... }
 
 @Transactional
-public Risk updateRisk(UUID id, RiskUpdateReq req, String googleUserId) { ... }
+public Risk updateRisk(UUID id, RiskUpdateReq req, String userId) { ... }
 
 @Transactional
-public void deleteRisk(UUID id, String googleUserId) { ... }
+public void deleteRisk(UUID id, String userId) { ... }
 ```
 
 ### Risk Value Service

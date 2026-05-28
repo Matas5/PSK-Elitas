@@ -21,10 +21,10 @@ Example:
 @GetMapping("/{id}")
 public RiskResp getRisk(
         @PathVariable UUID id,
-        @RequestHeader("X-Google-User-Id") String googleUserId
+        @RequestHeader("X-User-Id") String userId
 ) {
     return RiskResp.from(
-            riskService.getRisk(id, googleUserId)
+            riskService.getRisk(id, userId)
     );
 }
 ```
@@ -53,9 +53,9 @@ Example:
 
 ```java id="n8qj5w"
 @Transactional
-public Risk updateRisk(UUID id, RiskUpdateReq req, String googleUserId) {
+public Risk updateRisk(UUID id, RiskUpdateReq req, String userId) {
 
-    Risk risk = getRisk(id, googleUserId);
+    Risk risk = getRisk(id, userId);
 
     risk.update(new Risk.UpdateRiskFields(
             req.name().trim(),

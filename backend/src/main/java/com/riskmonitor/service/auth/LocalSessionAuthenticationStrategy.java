@@ -14,7 +14,7 @@ import java.util.UUID;
 // Local profile authentication is request-scoped by design: the user id is read
 // from the current HTTP request header and no server-side session state is kept.
 public class LocalSessionAuthenticationStrategy
-        extends GoogleHeaderAuthenticationStrategy {
+        extends HeaderUserIdAuthenticationStrategy {
 
     private final AppUserRepository userRepository;
 
@@ -24,15 +24,15 @@ public class LocalSessionAuthenticationStrategy
 
     @Override
     public String resolveUserId(HttpServletRequest request) {
-        String header = request.getHeader("X-Local-User-Id");
+        String header = request.getHeader("X-User-Id");
         if (header == null || header.isBlank()) {
-            throw new IllegalArgumentException("Missing X-Local-User-Id header");
+            throw new IllegalArgumentException("Missing X-User-Id header");
         }
         UUID userId;
         try {
             userId = UUID.fromString(header.trim());
         } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Malformed X-Local-User-Id header: not a UUID");
+            throw new IllegalArgumentException("Malformed X-User-Id header: not a UUID");
         }
         if (!userRepository.existsById(userId)) {
             throw new IllegalArgumentException("Unknown local user: " + userId);

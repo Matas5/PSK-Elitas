@@ -23,8 +23,8 @@ public class Risk {
     @Column(name = "id", nullable = false, updatable = false)
     private UUID id;
 
-    @Column(name = "google_user_id")
-    private String googleUserId;
+    @Column(name = "user_id")
+    private String userId;
 
     @Column(name = "name", nullable = false, length = 100)
     private String name;
@@ -76,7 +76,7 @@ public class Risk {
     }
 
     public Risk(
-            String googleUserId,
+            String userId,
             String name,
             String category,
             String description,
@@ -91,7 +91,7 @@ public class Risk {
             Instant validUntil
     ) {
         this.id = UUID.randomUUID();
-        this.googleUserId = googleUserId;
+        this.userId = userId;
         this.name = name;
         this.category = category;
         this.description = description;
@@ -176,7 +176,7 @@ public class Risk {
 
     // Getters
     public UUID getId() { return id; }
-    public String getGoogleUserId() { return googleUserId; }
+    public String getUserId() { return userId; }
     public String getName() { return name; }
     public String getCategory() { return category; }
     public String getDescription() { return description; }

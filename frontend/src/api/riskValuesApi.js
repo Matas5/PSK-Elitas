@@ -29,18 +29,11 @@ function authHeaders() {
     const authUser = JSON.parse(raw);
     const headers = { "Content-Type": "application/json" };
 
-    if (authUser?.provider === 'local') {
-        if (!authUser.userId) {
-            throw new Error("Missing userId in auth_user");
-        }
-        headers["X-Local-User-Id"] = authUser.userId;
-    } else {
-        const googleUserId = authUser?.googleId;
-        if (!googleUserId) {
-            throw new Error("Missing googleId in auth_user");
-        }
-        headers["X-Google-User-Id"] = googleUserId;
+    const userId = authUser?.userId;
+    if (!userId) {
+        throw new Error("Missing userId in auth_user");
     }
+    headers["X-User-Id"] = userId;
 
     return headers;
 }

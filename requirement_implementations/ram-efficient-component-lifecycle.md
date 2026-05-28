@@ -82,19 +82,19 @@ Concrete source lines:
 - current request is read at [CurrentUserIdArgumentResolver.java:30](backend/src/main/java/com/riskmonitor/web/CurrentUserIdArgumentResolver.java#L30)
 - user id is resolved from the request at [CurrentUserIdArgumentResolver.java:34](backend/src/main/java/com/riskmonitor/web/CurrentUserIdArgumentResolver.java#L34)
 
-### Google Profile: Stateless Header-Based User Id
-**File:** [backend/src/main/java/com/riskmonitor/service/auth/GoogleHeaderAuthenticationStrategy.java](backend/src/main/java/com/riskmonitor/service/auth/GoogleHeaderAuthenticationStrategy.java#L10)
+### Default Profile: Stateless Header-Based User Id
+**File:** [backend/src/main/java/com/riskmonitor/service/auth/HeaderUserIdAuthenticationStrategy.java](backend/src/main/java/com/riskmonitor/service/auth/HeaderUserIdAuthenticationStrategy.java#L10)
 
-The Google authentication strategy reads `X-Google-User-Id` from the current request header and returns it directly. No server-side session component is created.
+The default authentication strategy reads `X-User-Id` from the current request header and returns it directly. No server-side session component is created.
 
 Concrete source lines:
-- header is read at [GoogleHeaderAuthenticationStrategy.java:11](backend/src/main/java/com/riskmonitor/service/auth/GoogleHeaderAuthenticationStrategy.java#L11)
-- user id is returned from request data at [GoogleHeaderAuthenticationStrategy.java:15](backend/src/main/java/com/riskmonitor/service/auth/GoogleHeaderAuthenticationStrategy.java#L15)
+- header is read at [HeaderUserIdAuthenticationStrategy.java:11](backend/src/main/java/com/riskmonitor/service/auth/HeaderUserIdAuthenticationStrategy.java#L11)
+- user id is returned from request data at [HeaderUserIdAuthenticationStrategy.java:15](backend/src/main/java/com/riskmonitor/service/auth/HeaderUserIdAuthenticationStrategy.java#L15)
 
 ### Local Profile: Request-Scoped Header-Based User Id
 **File:** [backend/src/main/java/com/riskmonitor/service/auth/LocalSessionAuthenticationStrategy.java](backend/src/main/java/com/riskmonitor/service/auth/LocalSessionAuthenticationStrategy.java#L14)
 
-The local profile class name is legacy, but the implementation is stateless: it reads `X-Local-User-Id` from the current request header, validates that the user exists, and returns the id. The code explicitly documents that no server-side session state is kept.
+The local profile strategy is stateless: it reads `X-User-Id` from the current request header, validates that the user exists, and returns the id. The code explicitly documents that no server-side session state is kept.
 
 Concrete source lines:
 - no server-side session state note at [LocalSessionAuthenticationStrategy.java:14](backend/src/main/java/com/riskmonitor/service/auth/LocalSessionAuthenticationStrategy.java#L14)

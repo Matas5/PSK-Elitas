@@ -21,18 +21,18 @@ public interface AuthenticationStrategy {
 
 ## Default Implementation
 
-### Google header strategy (active by default)
-**File:** [backend/src/main/java/com/riskmonitor/service/auth/GoogleHeaderAuthenticationStrategy.java](backend/src/main/java/com/riskmonitor/service/auth/GoogleHeaderAuthenticationStrategy.java)
+### Header strategy (active by default)
+**File:** [backend/src/main/java/com/riskmonitor/service/auth/HeaderUserIdAuthenticationStrategy.java](backend/src/main/java/com/riskmonitor/service/auth/HeaderUserIdAuthenticationStrategy.java)
 
 ```java
 @Service
-public class GoogleHeaderAuthenticationStrategy implements AuthenticationStrategy {
+public class HeaderUserIdAuthenticationStrategy implements AuthenticationStrategy {
 
     @Override
     public String resolveUserId(HttpServletRequest request) {
-        String userId = request.getHeader("X-Google-User-Id");
+        String userId = request.getHeader("X-User-Id");
         if (userId == null || userId.isBlank()) {
-            throw new IllegalArgumentException("Missing X-Google-User-Id header");
+            throw new IllegalArgumentException("Missing X-User-Id header");
         }
         return userId;
     }
@@ -53,7 +53,7 @@ public class GoogleHeaderAuthenticationStrategy implements AuthenticationStrateg
 @Primary
 @Profile("local")
 public class LocalSessionAuthenticationStrategy
-        extends GoogleHeaderAuthenticationStrategy {
+        extends HeaderUserIdAuthenticationStrategy {
 
     private final AppUserRepository userRepository;
 
@@ -63,15 +63,15 @@ public class LocalSessionAuthenticationStrategy
 
     @Override
     public String resolveUserId(HttpServletRequest request) {
-        String header = request.getHeader("X-Local-User-Id");
+        String header = request.getHeader("X-User-Id");
         if (header == null || header.isBlank()) {
-            throw new IllegalArgumentException("Missing X-Local-User-Id header");
+            throw new IllegalArgumentException("Missing X-User-Id header");
         }
         UUID userId;
         try {
             userId = UUID.fromString(header.trim());
         } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Malformed X-Local-User-Id header: not a UUID");
+            throw new IllegalArgumentException("Malformed X-User-Id header: not a UUID");
         }
         if (!userRepository.existsById(userId)) {
             throw new IllegalArgumentException("Unknown local user: " + userId);
@@ -84,8 +84,8 @@ public class LocalSessionAuthenticationStrategy
 **How it works:**
 
 - `@Profile("local")` - only registered when the `local` profile is active.
-- `@Primary` - when present, Spring picks this bean over the Google one for injection.
-- `extends GoogleHeaderAuthenticationStrategy` - demonstrates the **Decorator/Specialization** angle: new behavior is added by extending the existing strategy, not by editing it.
+- `@Primary` - when present, Spring picks this bean over the default header strategy for injection.
+- `extends HeaderUserIdAuthenticationStrategy` - demonstrates the **Decorator/Specialization** angle: new behavior is added by extending the existing strategy, not by editing it.
 
 ---
 
@@ -123,14 +123,14 @@ public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResol
 **File:** [backend/src/main/resources/application.properties](backend/src/main/resources/application.properties)
 
 ```properties
-# SPECIALIZATION DEMO: COMMENT -> GOOGLE LOGIN, UNCOMMENT -> LOCAL LOGIN
+# SPECIALIZATION DEMO: COMMENT -> DEFAULT (HEADER) STRATEGY, UNCOMMENT -> LOCAL LOGIN
 spring.profiles.active=local
 ```
 
 **How it works:** Flipping a single line in config - **no recompile, no source edit** - swaps the entire authentication algorithm:
 
 - `spring.profiles.active=local` → `LocalSessionAuthenticationStrategy` (DB-backed UUID).
-- (commented out) → `GoogleHeaderAuthenticationStrategy` (Google-issued user id).
+- (commented out) → `HeaderUserIdAuthenticationStrategy` (raw `X-User-Id` header, used when authenticating via the Google OAuth flow).
 
 ---
 

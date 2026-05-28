@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface RiskRepository extends JpaRepository<Risk, UUID> {
-    Optional<Risk> findByIdAndGoogleUserId(UUID id, String googleUserId);
+    Optional<Risk> findByIdAndUserId(UUID id, String userId);
 
-    List<Risk> findAllByGoogleUserId(String googleUserId, Sort sort);
+    List<Risk> findAllByUserId(String userId, Sort sort);
 }

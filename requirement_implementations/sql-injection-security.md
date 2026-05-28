@@ -18,18 +18,18 @@ The backend uses Spring Data JPA repository methods instead of dynamically conca
 Concrete source lines:
 
 * parameterized ownership query:
-  `findByIdAndGoogleUserId(UUID id, String googleUserId)`
+  `findByIdAndUserId(UUID id, String userId)`
 * parameterized user-scoped list query:
-  `findAllByGoogleUserId(String googleUserId, Sort sort)`
+  `findAllByUserId(String userId, Sort sort)`
 
 Example:
 
 ```java
 public interface RiskRepository extends JpaRepository<Risk, UUID> {
 
-    Optional<Risk> findByIdAndGoogleUserId(UUID id, String googleUserId);
+    Optional<Risk> findByIdAndUserId(UUID id, String userId);
 
-    List<Risk> findAllByGoogleUserId(String googleUserId, Sort sort);
+    List<Risk> findAllByUserId(String userId, Sort sort);
 }
 ```
 
@@ -39,7 +39,7 @@ These repository methods are internally translated into parameterized SQL querie
 SELECT *
 FROM risk
 WHERE id = ?
-AND google_user_id = ?
+AND user_id = ?
 ```
 
 Because parameters are bound separately from SQL syntax, malicious input is treated as plain data instead of executable SQL.
@@ -79,13 +79,13 @@ Spring Data JPA internally uses Hibernate ORM and JDBC prepared statements for r
 Instead of dynamically constructing SQL such as:
 
 ```sql
-SELECT * FROM risk WHERE google_user_id = 'userInput'
+SELECT * FROM risk WHERE user_id = 'userInput'
 ```
 
 the framework generates prepared statements with placeholders:
 
 ```sql
-SELECT * FROM risk WHERE google_user_id = ?
+SELECT * FROM risk WHERE user_id = ?
 ```
 
 and safely binds values separately.
@@ -108,7 +108,7 @@ Example:
 @GetMapping("/{id}")
 public RiskResp getRisk(
         @PathVariable UUID id,
-        @RequestHeader("X-Google-User-Id") String googleUserId
+        @RequestHeader("X-User-Id") String userId
 )
 ```
 
