@@ -1,9 +1,11 @@
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import FormControlLabel from '@mui/material/FormControlLabel';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
-import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
 import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
@@ -35,7 +37,7 @@ export default function Profile() {
   const { locale, setLocale } = useLocale();
   const displayName = user?.username || user?.displayName || 'User';
   const providerLabel = provider ? provider.toUpperCase() : null;
-  const isEu = locale === 'lt';
+  const datePreview = locale === 'lt' ? '2026-05-28 14:30' : '5/28/2026, 2:30 PM';
 
   return (
     <Box>
@@ -70,31 +72,26 @@ export default function Profile() {
             <Divider />
 
             {/*  DATE FORMAT -> MOVE LATER TO SETTINGS? */}
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Box sx={{ color: 'text.secondary', display: 'flex' }}>
+            <Stack direction="row" spacing={1.5} alignItems="flex-start">
+              <Box sx={{ color: 'text.secondary', display: 'flex', mt: 1 }}>
                 <LanguageOutlinedIcon />
               </Box>
-              <Stack spacing={0} sx={{ flex: 1, minWidth: 0 }}>
+              <Stack spacing={0.5} sx={{ flex: 1, minWidth: 0 }}>
+                <FormControl size="small" sx={{ minWidth: 220 }}>
+                  <InputLabel id="profile-locale-label">Date format</InputLabel>
+                  <Select
+                    labelId="profile-locale-label"
+                    label="Date format"
+                    value={locale}
+                    onChange={(e) => setLocale(e.target.value)}
+                  >
+                    <MenuItem value="lt">Lithuanian (lt)</MenuItem>
+                    <MenuItem value="en">English (US, en)</MenuItem>
+                  </Select>
+                </FormControl>
                 <Typography variant="caption" color="text.secondary">
-                  Date format
+                  {datePreview}
                 </Typography>
-                <FormControlLabel
-                  sx={{ mx: 0 }}
-                  control={
-                    <Switch
-                      checked={isEu}
-                      onChange={(e) => setLocale(e.target.checked ? 'lt' : 'en')}
-                      inputProps={{ 'aria-label': 'EU date format toggle' }}
-                    />
-                  }
-                  label={
-                    <Typography variant="body1">
-                      EU format <Typography component="span" variant="body2" color="text.secondary">
-                        ({isEu ? '2026-05-28 14:30' : '5/28/2026, 2:30 PM'})
-                      </Typography>
-                    </Typography>
-                  }
-                />
               </Stack>
             </Stack>
           </Stack>

@@ -16,8 +16,8 @@ services:
 
   authserver:
     build:
-      context: .
-      dockerfile: Dockerfile.auth
+      context: ./auth-server
+      dockerfile: Dockerfile
     container_name: risk-monitor-authserver
     restart: unless-stopped
     environment:

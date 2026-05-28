@@ -4,8 +4,10 @@ import passport from "passport";
 import { Strategy as GoogleStrategy } from "passport-google-oauth20"; 
 // Importing the 'Google OAuth 2.0' strategy to let users log in using Google accounts.
 
-import 'dotenv/config';
-// Loads environment variables from a .env file, like your Google app's client ID and secret.
+import dotenv from "dotenv";
+import path from "path";
+// .env lives at the project root, one level above auth-server/
+dotenv.config({ path: path.resolve(import.meta.dirname, "../.env") });
 
 let users = []; // In-memory array
 // A temporary list to store user information in memory. 
