@@ -1,50 +1,57 @@
-const palette = {
+import tokens from './tokens';
+
+const { brand, neutral, text, risk } = tokens;
+
+const lightPalette = {
   primary: {
-    main: '#05668D',
-    light: '#427AA1',
-    dark: '#02475F',
-    contrastText: '#FFFFFF',
+    main: brand.primary,
+    light: brand.primaryLight,
+    dark: brand.primaryDark,
+    contrastText: brand.contrast,
   },
   secondary: {
-    main: '#427AA1',
-    light: '#6F9CC0',
-    dark: '#2E5A78',
-    contrastText: '#FFFFFF',
+    main: brand.primaryLight,
+    light: brand.secondaryLight,
+    dark: brand.secondaryDark,
+    contrastText: brand.contrast,
+  },
+  info: {
+    main: text.secondary,
+    light: neutral.activeBg,
+    dark: text.primary,
+    contrastText: brand.contrast,
   },
   background: {
-    default: '#EBF2FA',
-    paper: '#FFFFFF',
+    default: neutral.offWhite,
+    paper: neutral.white,
   },
   text: {
-    primary: '#0E2A3A',
-    secondary: '#4A6273',
-    disabled: '#8FA1AE',
+    primary: text.primary,
+    secondary: text.secondary,
+    disabled: text.disabled,
   },
-  divider: 'rgba(5, 102, 141, 0.12)',
-  risk: {
-    green: {
-      main: '#2E7D32',
-      contrastText: '#FFFFFF',
-      soft: 'rgba(46, 125, 50, 0.12)',
-      band: 'rgba(46, 125, 50, 0.14)',
-    },
-    yellow: {
-      main: '#ED9A1A',
-      contrastText: '#0E2A3A',
-      soft: 'rgba(237, 154, 26, 0.14)',
-      band: 'rgba(237, 154, 26, 0.18)',
-    },
-    red: {
-      main: '#C62828',
-      contrastText: '#FFFFFF',
-      soft: 'rgba(198, 40, 40, 0.12)',
-      band: 'rgba(198, 40, 40, 0.18)',
-    },
+  divider: neutral.border,
+  TableCell: {
+    border: neutral.border,
   },
+  risk,
   surface: {
-    sunken: '#DFE9F4',
-    raised: '#FFFFFF',
+    sunken: neutral.sunken,
+    raised: neutral.white,
+  },
+  sidebar: {
+    bg: neutral.white,
+    border: neutral.border,
+    text: text.primary,
+    textMuted: text.secondary,
+    hover: neutral.hover,
+    activeBg: neutral.activeBg,
+    activeAccent: brand.primary,
   },
 };
 
-export default palette;
+const colorSchemes = {
+  light: { palette: lightPalette },
+};
+
+export default colorSchemes;

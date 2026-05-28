@@ -13,13 +13,10 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
 
-import DashboardOutlinedIcon from '@mui/icons-material/DashboardOutlined';
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
-import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -29,33 +26,48 @@ import { useNotification } from '../context/NotificationContext';
 import { layout } from '../theme';
 import { ROUTES } from '../routes';
 
-const NAV_ITEMS = [
-  { to: ROUTES.DASHBOARD, label: 'Dashboard', icon: <DashboardOutlinedIcon /> },
+const PRIMARY_NAV = [
   { to: ROUTES.RISKS, label: 'Risks', icon: <WarningAmberOutlinedIcon /> },
   { to: ROUTES.RISK_VALUES, label: 'Risk Values', icon: <TimelineOutlinedIcon /> },
   { to: ROUTES.REPORTS, label: 'Reports', icon: <AssessmentOutlinedIcon /> },
-  { to: ROUTES.PROFILE, label: 'Profile', icon: <PersonOutlineOutlinedIcon /> },
 ];
+
+const HOST_ORG = import.meta.env.VITE_HOST_ORG || 'Bulvinuk.ai Limited.';
 
 function NavListItem({ to, label, icon, onNavigate }) {
   return (
-    <ListItem disablePadding sx={{ mb: 0.5 }}>
+    <ListItem disablePadding sx={{ mb: 0.25 }}>
       <ListItemButton
         component={NavLink}
         to={to}
         onClick={onNavigate}
         sx={{
-          borderRadius: 2,
-          color: 'rgba(255,255,255,0.78)',
+          position: 'relative',
+          borderRadius: 1.5,
+          pl: 2,
+          py: 1,
+          color: 'sidebar.textMuted',
+          transition: 'background-color 120ms ease, color 120ms ease',
           '& .MuiListItemIcon-root': { color: 'inherit', minWidth: 36 },
           '&:hover': {
-            bgcolor: 'rgba(255,255,255,0.08)',
-            color: 'primary.contrastText',
+            bgcolor: 'sidebar.hover',
+            color: 'sidebar.text',
           },
           '&.active': {
-            bgcolor: 'rgba(255,255,255,0.16)',
-            color: 'primary.contrastText',
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.22)' },
+            bgcolor: 'sidebar.activeBg',
+            color: 'sidebar.text',
+            '& .MuiListItemText-primary': { fontWeight: 700 },
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              left: 0,
+              top: 6,
+              bottom: 6,
+              width: 3,
+              borderRadius: 2,
+              bgcolor: 'sidebar.activeAccent',
+            },
+            '&:hover': { bgcolor: 'sidebar.activeBg' },
           },
         }}
       >
@@ -69,59 +81,147 @@ function NavListItem({ to, label, icon, onNavigate }) {
   );
 }
 
-function DrawerContent({ user, onLogout, onNavigate }) {
+function DrawerContent({ user, provider, onLogout, onNavigate }) {
+  const displayName = user?.displayName || user?.username || 'User';
+  const email = user?.email;
+  const initial = displayName.charAt(0).toUpperCase();
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ px: 2.5, py: 2.5 }}>
-        <Box
-          sx={{
-            width: 38,
-            height: 38,
-            borderRadius: 2,
-            bgcolor: 'rgba(255,255,255,0.14)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
-        >
-          <ShieldOutlinedIcon fontSize="small" />
-        </Box>
-        <Box>
-          <Typography variant="h5" sx={{ color: 'inherit', lineHeight: 1.2 }}>
-            Risk Monitor
-          </Typography>
-          <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
-            KRI tracking
-          </Typography>
-        </Box>
-      </Stack>
+      <Box sx={{ px: 2.5, py: 2.5 }}>
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1.25 }}>
+          <Box
+            sx={{
+              width: 40,
+              height: 40,
+              borderRadius: 1.5,
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <ShieldOutlinedIcon fontSize="small" />
+          </Box>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{
+                color: 'sidebar.text',
+                fontWeight: 700,
+                lineHeight: 1.2,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              {HOST_ORG}
+            </Typography>
+            <Typography
+              variant="caption"
+              sx={{ color: 'sidebar.textMuted', display: 'block', lineHeight: 1.2 }}
+            >
+              Risk Monitor
+            </Typography>
+          </Box>
+        </Stack>
+      </Box>
 
-      <List sx={{ px: 1.5, flexGrow: 1 }}>
-        {NAV_ITEMS.map((item) => (
+      <List sx={{ px: 1.5, py: 1.5, flexGrow: 1 }}>
+        {PRIMARY_NAV.map((item) => (
           <NavListItem key={item.to} {...item} onNavigate={onNavigate} />
         ))}
       </List>
 
-      <Divider sx={{ borderColor: 'rgba(255,255,255,0.12)' }} />
-      <Box sx={{ px: 2.5, py: 2 }}>
-        <Typography
-          variant="caption"
-          sx={{ display: 'block', color: 'rgba(255,255,255,0.6)', mb: 1 }}
+      <Box sx={{ px: 2, py: 2 }}>
+        <Box
+          component={NavLink}
+          to={ROUTES.PROFILE}
+          onClick={onNavigate}
+          sx={{
+            display: 'block',
+            textDecoration: 'none',
+            color: 'inherit',
+            borderRadius: 1.5,
+            p: 1,
+            mx: -1,
+            mb: 1.5,
+            transition: 'background-color 120ms ease',
+            '&:hover': { bgcolor: 'sidebar.hover' },
+            '&.active': {
+              bgcolor: 'sidebar.activeBg',
+              outline: '1px solid',
+              outlineColor: 'sidebar.activeAccent',
+            },
+          }}
         >
-          Signed in as <strong>{user?.displayName || user?.username || 'User'}</strong>
-        </Typography>
+          <Stack direction="row" spacing={1.25} alignItems="center" sx={{ minWidth: 0 }}>
+            <Box
+              sx={{
+                width: 32,
+                height: 32,
+                flexShrink: 0,
+                borderRadius: '50%',
+                bgcolor: 'sidebar.activeBg',
+                color: 'primary.main',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontWeight: 700,
+                fontSize: '0.85rem',
+              }}
+            >
+              {initial}
+            </Box>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: 'sidebar.text',
+                  fontWeight: 600,
+                  lineHeight: 1.2,
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {displayName}
+              </Typography>
+              {email && (
+                <Typography
+                  variant="caption"
+                  sx={{
+                    color: 'sidebar.textMuted',
+                    display: 'block',
+                    lineHeight: 1.2,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {email}
+                </Typography>
+              )}
+            </Box>
+          </Stack>
+        </Box>
         <Button
           fullWidth
+          variant="outlined"
           startIcon={<LogoutOutlinedIcon />}
           onClick={onLogout}
           sx={{
             justifyContent: 'flex-start',
-            color: 'primary.contrastText',
-            bgcolor: 'rgba(255,255,255,0.08)',
-            '&:hover': { bgcolor: 'rgba(255,255,255,0.18)' },
+            color: 'sidebar.text',
+            borderColor: 'sidebar.border',
+            '&:hover': {
+              bgcolor: 'sidebar.hover',
+              borderColor: 'sidebar.activeAccent',
+            },
           }}
         >
-          Logout
+          Sign out
         </Button>
       </Box>
     </Box>
@@ -129,7 +229,7 @@ function DrawerContent({ user, onLogout, onNavigate }) {
 }
 
 export default function Navbar() {
-  const { user, logout } = useAuth();
+  const { user, provider, logout } = useAuth();
   const { showNotification } = useNotification();
   const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -137,21 +237,16 @@ export default function Navbar() {
   const handleLogout = async () => {
     logout();
     setMobileOpen(false);
-    
-    // Show success notification
+
     showNotification('Logged out successfully', 'success', 4000);
-    
-    // Call auth server logout endpoint to clear session properly
-    const authUrl = import.meta.env.VITE_AUTH_URL || "http://localhost:3000";
-    
+
+    const authUrl = import.meta.env.VITE_AUTH_URL || 'http://localhost:3000';
     try {
-      // Call logout endpoint (don't redirect to it)
       await fetch(`${authUrl}/logout`, { credentials: 'include' });
     } catch (error) {
       console.error('Logout error:', error);
     }
-    
-    // Navigate to login after a brief delay to show notification
+
     setTimeout(() => {
       navigate(ROUTES.LOGIN, { replace: true });
     }, 500);
@@ -159,12 +254,13 @@ export default function Navbar() {
 
   const handleMobileNavigate = () => setMobileOpen(false);
 
-  const drawerSx = {
+  const drawerPaperSx = {
     width: layout.sidebarWidth,
     boxSizing: 'border-box',
-    bgcolor: 'primary.main',
-    color: 'primary.contrastText',
-    borderRight: 'none',
+    bgcolor: 'sidebar.bg',
+    color: 'sidebar.text',
+    borderRight: '1px solid',
+    borderColor: 'sidebar.border',
   };
 
   return (
@@ -174,7 +270,10 @@ export default function Navbar() {
         elevation={0}
         sx={{
           display: { xs: 'block', md: 'none' },
-          bgcolor: 'primary.main',
+          bgcolor: 'background.paper',
+          color: 'text.primary',
+          borderBottom: '1px solid',
+          borderColor: 'sidebar.border',
         }}
       >
         <Toolbar sx={{ minHeight: 56 }}>
@@ -187,8 +286,22 @@ export default function Navbar() {
           >
             <MenuIcon />
           </IconButton>
-          <ShieldOutlinedIcon fontSize="small" sx={{ mr: 1 }} />
-          <Typography variant="h5" sx={{ color: 'inherit' }}>
+          <Box
+            sx={{
+              width: 28,
+              height: 28,
+              borderRadius: 1,
+              bgcolor: 'primary.main',
+              color: 'primary.contrastText',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              mr: 1,
+            }}
+          >
+            <ShieldOutlinedIcon sx={{ fontSize: 18 }} />
+          </Box>
+          <Typography variant="h5" sx={{ color: 'text.primary' }}>
             Risk Monitor
           </Typography>
         </Toolbar>
@@ -200,10 +313,10 @@ export default function Navbar() {
           width: layout.sidebarWidth,
           flexShrink: 0,
           display: { xs: 'none', md: 'block' },
-          '& .MuiDrawer-paper': drawerSx,
+          '& .MuiDrawer-paper': drawerPaperSx,
         }}
       >
-        <DrawerContent user={user} onLogout={handleLogout} />
+        <DrawerContent user={user} provider={provider} onLogout={handleLogout} />
       </Drawer>
 
       <Drawer
@@ -213,11 +326,15 @@ export default function Navbar() {
         ModalProps={{ keepMounted: true }}
         sx={{
           display: { xs: 'block', md: 'none' },
-          '& .MuiDrawer-paper': drawerSx,
+          '& .MuiDrawer-paper': {
+            ...drawerPaperSx,
+            width: { xs: 280, sm: layout.sidebarWidth },
+          },
         }}
       >
         <DrawerContent
           user={user}
+          provider={provider}
           onLogout={handleLogout}
           onNavigate={handleMobileNavigate}
         />

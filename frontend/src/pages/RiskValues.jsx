@@ -31,20 +31,34 @@ import Typography from '@mui/material/Typography';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import RefreshIcon from '@mui/icons-material/Refresh';
+
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import dayjs from 'dayjs';
 
 import { listRisks } from '../api/risksApi';
 import { deleteRiskValue, listRiskValues, updateRiskValue } from '../api/riskValuesApi';
 import LogRiskValueDialog from '../components/LogRiskValueDialog';
 import { useNotification } from '../context/NotificationContext';
+import { useLocale } from '../context/LocaleContext.jsx';
+import { needsSeconds } from '../constants/risk';
 
-function formatDateTime(value) {
+const PICKER_VIEWS_WITH_SECONDS = ['year', 'month', 'day', 'hours', 'minutes', 'seconds'];
+const PICKER_VIEWS = ['year', 'month', 'day', 'hours', 'minutes'];
+
+function pickerToInputString(d, withSeconds) {
+  if (!d) return '';
+  return withSeconds ? d.format('YYYY-MM-DDTHH:mm:ss') : d.format('YYYY-MM-DDTHH:mm');
+}
+
+function formatDateTime(value, locale) {
   if (!value) return '-';
 
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
 
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'short',
     timeStyle: 'short',
   }).format(date);
 }
@@ -186,15 +200,30 @@ function EditRiskValueDialog({ entry, risk, onClose, onSaved }) {
             helperText={errors.value || `Numeric value${risk?.measurementUnit ? ` in ${risk.measurementUnit}` : ''}`}
             inputProps={{ step: 'any' }}
           />
-          <TextField
+          <DateTimePicker
             label="Date"
-            type="datetime-local"
-            required
-            value={form.recordedAt}
-            onChange={update('recordedAt')}
-            error={Boolean(errors.recordedAt)}
-            helperText={errors.recordedAt || ' '}
-            InputLabelProps={{ shrink: true }}
+            value={form.recordedAt ? dayjs(form.recordedAt) : null}
+            onChange={(d) => {
+              setForm((prev) => ({
+                ...prev,
+                recordedAt: pickerToInputString(d, needsSeconds(risk)),
+              }));
+              setErrors((prev) => {
+                if (!prev.recordedAt) return prev;
+                const next = { ...prev };
+                delete next.recordedAt;
+                return next;
+              });
+            }}
+            views={needsSeconds(risk) ? PICKER_VIEWS_WITH_SECONDS : PICKER_VIEWS}
+            slotProps={{
+              textField: {
+                required: true,
+                fullWidth: true,
+                error: Boolean(errors.recordedAt),
+                helperText: errors.recordedAt || ' ',
+              },
+            }}
           />
           {submitError && <Alert severity="error">{submitError}</Alert>}
         </Stack>
@@ -210,6 +239,7 @@ function EditRiskValueDialog({ entry, risk, onClose, onSaved }) {
 }
 
 export default function RiskValues() {
+  const { locale } = useLocale();
   const [searchParams, setSearchParams] = useSearchParams();
   const [risks, setRisks] = useState([]);
   const [risksLoading, setRisksLoading] = useState(true);
@@ -449,9 +479,13 @@ export default function RiskValues() {
               ))}
             </Select>
           </FormControl>
-          <Button onClick={loadRiskList} disabled={risksLoading}>
-            Refresh risks
-          </Button>
+          <Tooltip title="Refresh risks">
+            <span>
+              <IconButton onClick={loadRiskList} disabled={risksLoading} size="small">
+                <RefreshIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
         </Stack>
         {risksLoading && (
           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 2 }}>
@@ -568,7 +602,7 @@ export default function RiskValues() {
 
                   return (
                     <TableRow key={entry.id} hover>
-                      <TableCell>{formatDateTime(entry.recordedAt)}</TableCell>
+                      <TableCell>{formatDateTime(entry.recordedAt, locale)}</TableCell>
                       <TableCell align="right">{entry.value}</TableCell>
                       <TableCell>{selectedRisk?.measurementUnit || '-'}</TableCell>
                       <TableCell>
@@ -650,7 +684,7 @@ export default function RiskValues() {
         <DialogTitle>Delete logged value?</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            This will permanently delete the value logged on {formatDateTime(valueToDelete?.recordedAt)}.
+            This will permanently delete the value logged on {formatDateTime(valueToDelete?.recordedAt, locale)}.
           </DialogContentText>
           {deleteError && <Alert severity="error" sx={{ mt: 2 }}>{deleteError}</Alert>}
         </DialogContent>

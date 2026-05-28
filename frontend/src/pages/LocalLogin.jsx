@@ -24,7 +24,7 @@ export default function LocalLogin() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      navigate(ROUTES.DASHBOARD, { replace: true });
+      navigate(ROUTES.RISKS, { replace: true });
     }
   }, [loading, isAuthenticated, navigate]);
 
@@ -40,7 +40,7 @@ export default function LocalLogin() {
         username: resp.username,
         displayName: resp.username,
       });
-      navigate(ROUTES.DASHBOARD, { replace: true });
+      navigate(ROUTES.RISKS, { replace: true });
     } catch (err) {
       setError(err.message || 'Login failed');
     } finally {

@@ -1,4 +1,3 @@
-// Mirrors com.riskmonitor.dto.risk.RiskStruct.RiskPeriod
 export const TIME_INTERVAL_UNITS = Object.freeze([
   { value: 'SECOND', label: 'Second' },
   { value: 'MINUTE', label: 'Minute' },
@@ -13,7 +12,6 @@ export const TIME_INTERVAL_UNIT_VALUES = Object.freeze(
   TIME_INTERVAL_UNITS.map((u) => u.value),
 );
 
-// UI-only — maps to (hasUpperBounds, hasLowerBounds) booleans on submit
 export const RISK_DIRECTIONS = Object.freeze([
   { value: 'HIGHER', label: 'Higher value = higher risk' },
   { value: 'LOWER', label: 'Lower value = higher risk' },
@@ -36,12 +34,12 @@ export function needsSeconds(riskOrUnit) {
   return unitOf(riskOrUnit) === 'SECOND';
 }
 
-export function formatRiskDateTime(value, riskOrUnit) {
+export function formatRiskDateTime(value, riskOrUnit, locale = 'lt') {
   if (!value) return '-';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
+  return new Intl.DateTimeFormat(locale, {
+    dateStyle: 'short',
     timeStyle: needsSeconds(riskOrUnit) ? 'medium' : 'short',
   }).format(date);
 }
@@ -55,10 +53,6 @@ export function toInputDateTime(value, riskOrUnit) {
     `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
     `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
   return needsSeconds(riskOrUnit) ? `${base}:${pad(date.getSeconds())}` : base;
-}
-
-export function dateInputProps(riskOrUnit) {
-  return needsSeconds(riskOrUnit) ? { step: 1 } : undefined;
 }
 
 function formatUnitLabel(value, count) {

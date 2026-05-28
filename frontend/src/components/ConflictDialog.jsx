@@ -9,6 +9,8 @@ import Typography from '@mui/material/Typography';
 import Box from '@mui/material/Box';
 import Divider from '@mui/material/Divider';
 
+import { useLocale } from '../context/LocaleContext.jsx';
+
 /**
  * Dialog shown when an optimistic locking conflict occurs.
  * Allows user to choose how to resolve the conflict.
@@ -21,6 +23,7 @@ export default function ConflictDialog({
   onOverwrite,
   onClose,
 }) {
+  const { locale } = useLocale();
   if (!open || !serverData) return null;
 
   const handleReload = () => {
@@ -94,7 +97,7 @@ export default function ConflictDialog({
                     Last modified
                   </Typography>
                   <Typography variant="body2">
-                    {new Date(serverData.modifiedAt).toLocaleString()} by {serverData.modifiedBy}
+                    {new Date(serverData.modifiedAt).toLocaleString(locale)} by {serverData.modifiedBy}
                   </Typography>
                 </Box>
               </Stack>

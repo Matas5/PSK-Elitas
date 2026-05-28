@@ -7,9 +7,19 @@ import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
+import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import dayjs from 'dayjs';
 
 import { createRiskValues, listRiskValues } from '../api/riskValuesApi';
-import { dateInputProps, toInputDateTime } from '../constants/risk';
+import { needsSeconds, toInputDateTime } from '../constants/risk';
+
+const PICKER_VIEWS_WITH_SECONDS = ['year', 'month', 'day', 'hours', 'minutes', 'seconds'];
+const PICKER_VIEWS = ['year', 'month', 'day', 'hours', 'minutes'];
+
+function pickerToInputString(d, withSeconds) {
+  if (!d) return '';
+  return withSeconds ? d.format('YYYY-MM-DDTHH:mm:ss') : d.format('YYYY-MM-DDTHH:mm');
+}
 
 function addInterval(date, step, unit) {
   const result = new Date(date);
@@ -61,7 +71,6 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
 
   useEffect(() => {
     let active = true;
-    // First page (recordedAt,desc) holds the latest value — enough for the default date.
     listRiskValues(risk.id)
       .then((data) => {
         if (!active || userEditedDateRef.current) return;
@@ -161,16 +170,31 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
             helperText={errors.value || `Numeric value in ${risk.measurementUnit}`}
             inputProps={{ step: 'any' }}
           />
-          <TextField
+          <DateTimePicker
             label="Date"
-            type="datetime-local"
-            required
-            value={form.recordedAt}
-            onChange={update('recordedAt')}
-            error={Boolean(errors.recordedAt)}
-            helperText={errors.recordedAt || ' '}
-            InputLabelProps={{ shrink: true }}
-            inputProps={dateInputProps(risk)}
+            value={form.recordedAt ? dayjs(form.recordedAt) : null}
+            onChange={(d) => {
+              userEditedDateRef.current = true;
+              setForm((prev) => ({
+                ...prev,
+                recordedAt: pickerToInputString(d, needsSeconds(risk)),
+              }));
+              setErrors((prev) => {
+                if (!prev.recordedAt) return prev;
+                const next = { ...prev };
+                delete next.recordedAt;
+                return next;
+              });
+            }}
+            views={needsSeconds(risk) ? PICKER_VIEWS_WITH_SECONDS : PICKER_VIEWS}
+            slotProps={{
+              textField: {
+                required: true,
+                fullWidth: true,
+                error: Boolean(errors.recordedAt),
+                helperText: errors.recordedAt || ' ',
+              },
+            }}
           />
 
           {submitError && <Alert severity="error">{submitError}</Alert>}

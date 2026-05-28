@@ -1,5 +1,5 @@
-import { createTheme } from '@mui/material/styles';
-import palette from './palette';
+import { extendTheme } from '@mui/material/styles';
+import colorSchemes from './palette';
 import components from './components';
 
 export const layout = {
@@ -8,8 +8,8 @@ export const layout = {
   contentMaxWidth: 1320,
 };
 
-const theme = createTheme({
-  palette,
+const theme = extendTheme({
+  colorSchemes,
   shape: {
     borderRadius: 10,
   },

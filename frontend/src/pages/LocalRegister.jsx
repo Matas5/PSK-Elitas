@@ -24,7 +24,7 @@ export default function LocalRegister() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      navigate(ROUTES.DASHBOARD, { replace: true });
+      navigate(ROUTES.RISKS, { replace: true });
     }
   }, [loading, isAuthenticated, navigate]);
 
@@ -42,7 +42,7 @@ export default function LocalRegister() {
         username: resp.username,
         displayName: resp.username,
       });
-      navigate(ROUTES.DASHBOARD, { replace: true });
+      navigate(ROUTES.RISKS, { replace: true });
     } catch (err) {
       setError(err.message || 'Registration failed');
     } finally {

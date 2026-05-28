@@ -18,7 +18,7 @@ export default function GoogleLogin() {
 
   useEffect(() => {
     if (!loading && isAuthenticated) {
-      navigate(ROUTES.DASHBOARD, { replace: true });
+      navigate(ROUTES.RISKS, { replace: true });
     }
   }, [loading, isAuthenticated, navigate]);
 
@@ -52,7 +52,7 @@ export default function GoogleLogin() {
             </Box>
             <Typography variant="h2">Risk Monitor</Typography>
             <Typography variant="body2" color="text.secondary">
-              Sign in with your Google account to access the dashboard.
+              Sign in with your Google account to access Risk Monitor.
             </Typography>
             <Button
               fullWidth
