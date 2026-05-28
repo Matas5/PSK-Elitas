@@ -16,29 +16,12 @@ function readStoredUser() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
-  const [provider, setProvider] = useState(null);
   const [loading, setLoading] = useState(true);
   const [justLoggedIn, setJustLoggedIn] = useState(false);
   const prevUserRef = useRef(user);
 
   useEffect(() => {
     const bootstrap = async () => {
-      let activeProvider = 'google';
-      try {
-        const cfg = await fetch('/api/auth/config');
-        if (cfg.ok) {
-          const data = await cfg.json();
-          if (data?.provider) activeProvider = data.provider;
-        }
-      } catch (error) {
-        console.error('Failed to fetch /api/auth/config, defaulting to google:', error);
-      }
-      setProvider(activeProvider);
-
-      if (activeProvider !== 'google') {
-        setLoading(false);
-        return;
-      }
       try {
         const authUrl = import.meta.env.VITE_AUTH_URL || 'http://localhost:3000';
         const response = await fetch(`${authUrl}/user`, { credentials: 'include' });
@@ -81,7 +64,7 @@ export function AuthProvider({ children }) {
   const value = useMemo(
     () => ({
       user,
-      provider,
+      provider: user?.provider ?? null,
       login,
       logout,
       isAuthenticated: Boolean(user),
@@ -89,7 +72,7 @@ export function AuthProvider({ children }) {
       justLoggedIn,
       clearJustLoggedIn,
     }),
-    [user, provider, login, logout, loading, justLoggedIn, clearJustLoggedIn],
+    [user, login, logout, loading, justLoggedIn, clearJustLoggedIn],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

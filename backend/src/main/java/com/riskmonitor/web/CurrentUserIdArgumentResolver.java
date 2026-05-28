@@ -1,8 +1,6 @@
 package com.riskmonitor.web;
 
-import com.riskmonitor.service.auth.AuthenticationStrategy;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import org.springframework.core.MethodParameter;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.support.WebDataBinderFactory;
@@ -11,10 +9,7 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.method.support.ModelAndViewContainer;
 
 @Component
-@RequiredArgsConstructor
 public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResolver {
-
-    private final AuthenticationStrategy authenticationStrategy;
 
     @Override
     public boolean supportsParameter(MethodParameter parameter) {
@@ -31,6 +26,10 @@ public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResol
         if (request == null) {
             throw new IllegalStateException("No HttpServletRequest available");
         }
-        return authenticationStrategy.resolveUserId(request);
+        String userId = request.getHeader("X-User-Id");
+        if (userId == null || userId.isBlank()) {
+            throw new IllegalArgumentException("Missing X-User-Id header");
+        }
+        return userId;
     }
 }

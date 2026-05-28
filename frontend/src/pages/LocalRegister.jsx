@@ -84,14 +84,12 @@ export default function LocalRegister() {
               >
                 <ShieldOutlinedIcon />
               </Box>
-              <Typography variant="h2">Create account</Typography>
-              <Typography variant="body2" color="text.secondary">
-                Pick a username and password (min 8 characters).
-              </Typography>
+              <Typography variant="h2">Register account</Typography>
             </Stack>
             {error && <Alert severity="error">{error}</Alert>}
             <TextField
               label="Username"
+              placeholder="Pick a username"
               autoComplete="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
@@ -102,6 +100,7 @@ export default function LocalRegister() {
             />
             <TextField
               label="Password"
+              placeholder="Pick a password (min 8 characters)"
               type="password"
               autoComplete="new-password"
               value={password}
@@ -116,16 +115,15 @@ export default function LocalRegister() {
               disabled={submitting}
               sx={{ textTransform: 'none', fontSize: '1rem', fontWeight: 500 }}
             >
-              {submitting ? 'Creating account…' : 'Create account'}
+              {submitting ? 'Registering account…' : 'Register account'}
             </Button>
             <Typography variant="body2" color="text.secondary" textAlign="center">
-              Already have an account?{' '}
               <Link
                 component="button"
                 type="button"
                 onClick={() => navigate(ROUTES.LOGIN)}
               >
-                Sign in
+                Back to login
               </Link>
             </Typography>
           </Stack>
