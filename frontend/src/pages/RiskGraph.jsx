@@ -31,6 +31,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import dayjs from 'dayjs';
 
+import { uploadPngReport } from '../api/reportsApi';
 import { getRisk, listRisks } from '../api/risksApi';
 import { listAllRiskValues } from '../api/riskValuesApi';
 import {
@@ -40,6 +41,7 @@ import {
   needsSeconds,
 } from '../constants/risk';
 import { useLocale } from '../context/LocaleContext.jsx';
+import { useNotification } from '../context/NotificationContext';
 import { useTeam } from '../context/TeamContext';
 import { ROUTES } from '../routes';
 
@@ -137,47 +139,65 @@ function ChartTooltip({ active, payload, risk, locale }) {
   );
 }
 
+// rasterizes the chart's SVG to a PNG blob (used for both download and saving to Reports)
+function chartToPngBlob(container) {
+  return new Promise((resolve, reject) => {
+    const svg = container?.querySelector('svg');
+    if (!svg) {
+      reject(new Error('No chart to export'));
+      return;
+    }
+
+    const { width, height } = svg.getBoundingClientRect();
+    const clone = svg.cloneNode(true);
+    clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width', width);
+    clone.setAttribute('height', height);
+
+    const source = new XMLSerializer().serializeToString(clone);
+    const svgUrl = URL.createObjectURL(new Blob([source], { type: 'image/svg+xml;charset=utf-8' }));
+
+    const img = new Image();
+    img.onload = () => {
+      const scale = 2;
+      const canvas = document.createElement('canvas');
+      canvas.width = width * scale;
+      canvas.height = height * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.scale(scale, scale);
+      ctx.drawImage(img, 0, 0);
+      URL.revokeObjectURL(svgUrl);
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error('Failed to render chart'));
+      }, 'image/png');
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(svgUrl);
+      reject(new Error('Failed to render chart'));
+    };
+    img.src = svgUrl;
+  });
+}
+
 function downloadSvgAsPng(container, filename) {
-  const svg = container?.querySelector('svg');
-  if (!svg) return;
-
-  const { width, height } = svg.getBoundingClientRect();
-  const clone = svg.cloneNode(true);
-  clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-  clone.setAttribute('width', width);
-  clone.setAttribute('height', height);
-
-  const source = new XMLSerializer().serializeToString(clone);
-  const svgUrl = URL.createObjectURL(new Blob([source], { type: 'image/svg+xml;charset=utf-8' }));
-
-  const img = new Image();
-  img.onload = () => {
-    const scale = 2;
-    const canvas = document.createElement('canvas');
-    canvas.width = width * scale;
-    canvas.height = height * scale;
-    const ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.scale(scale, scale);
-    ctx.drawImage(img, 0, 0);
-    URL.revokeObjectURL(svgUrl);
-
-    canvas.toBlob((blob) => {
-      if (!blob) return;
+  chartToPngBlob(container)
+    .then((blob) => {
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       link.download = filename;
       link.click();
       URL.revokeObjectURL(link.href);
-    }, 'image/png');
-  };
-  img.src = svgUrl;
+    })
+    .catch(() => {});
 }
 
 export default function RiskGraph() {
   const { locale } = useLocale();
   const { activeTeam } = useTeam();
+  const { showNotification } = useNotification();
   const { riskId: routeRiskId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedRiskId, setSelectedRiskId] = useState(routeRiskId || searchParams.get('riskId') || '');
@@ -190,6 +210,7 @@ export default function RiskGraph() {
   const [loadError, setLoadError] = useState(null);
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
+  const [savingChart, setSavingChart] = useState(false);
   const chartRef = useRef(null);
   const activeTeamId = activeTeam?.id || '';
   const selectedRisk = useMemo(
@@ -302,9 +323,23 @@ export default function RiskGraph() {
     return niceScale(Math.min(...numeric), Math.max(...numeric));
   }, [chartData, thresholds]);
 
+  const safeChartName = () => (risk?.name || 'risk-graph').replace(/[^a-z0-9-_]+/gi, '-');
+
   const handleDownload = () => {
-    const safeName = (risk?.name || 'risk-graph').replace(/[^a-z0-9-_]+/gi, '-');
-    downloadSvgAsPng(chartRef.current, `${safeName}.png`);
+    downloadSvgAsPng(chartRef.current, `${safeChartName()}.png`);
+  };
+
+  const handleSaveToReports = async () => {
+    setSavingChart(true);
+    try {
+      const blob = await chartToPngBlob(chartRef.current);
+      await uploadPngReport(activeTeamId, blob, `${safeChartName()}.png`);
+      showNotification('Chart saved to Reports.', 'success');
+    } catch (err) {
+      showNotification(err.message || 'Failed to save chart.', 'error');
+    } finally {
+      setSavingChart(false);
+    }
   };
 
   return (
@@ -452,6 +487,12 @@ export default function RiskGraph() {
                 disabled={chartData.length === 0}
               >
                 Download
+              </Button>
+              <Button
+                onClick={handleSaveToReports}
+                disabled={chartData.length === 0 || savingChart}
+              >
+                {savingChart ? 'Saving…' : 'Save to Reports'}
               </Button>
               <Button onClick={() => { setFromDate(''); setToDate(''); }}>
                 Clear
