@@ -68,7 +68,7 @@ export default function Reports() {
     loadReports().finally(() => setLoading(false));
   }, [loadReports]);
 
-  // poll while something is still generating, then stop
+  // poll while generating
   useEffect(() => {
     if (!activeTeamId) return undefined;
     const hasPending = reports.some((r) => r.status === 'PENDING');
@@ -135,7 +135,7 @@ export default function Reports() {
           onClick={handleGenerate}
           disabled={!activeTeam || generating}
         >
-          {generating ? 'Starting…' : 'Generate CSV report'}
+          {generating ? 'Starting…' : 'Generate All Risks CSV Report'}
         </Button>
       </Stack>
 
