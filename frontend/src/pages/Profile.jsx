@@ -8,7 +8,7 @@ import PersonOutlineOutlinedIcon from '@mui/icons-material/PersonOutlineOutlined
 import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
 import { useAuth } from '../auth/AuthContext';
 
-function InfoRow({ icon, label, value }) {
+function InfoRow({ icon, label, value, missing }) {
   return (
     <Stack direction="row" spacing={1.5} alignItems="center">
       <Box sx={{ color: 'text.secondary', display: 'flex' }}>{icon}</Box>
@@ -16,14 +16,18 @@ function InfoRow({ icon, label, value }) {
         <Typography variant="caption" color="text.secondary">
           {label}
         </Typography>
-        <Typography variant="body1">{value}</Typography>
+        <Typography variant="body1" color={missing ? 'text.disabled' : 'text.primary'}>
+          {value}
+        </Typography>
       </Stack>
     </Stack>
   );
 }
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, provider } = useAuth();
+  const displayName = user?.username || user?.displayName || 'User';
+  const providerLabel = provider ? provider.toUpperCase() : null;
 
   return (
     <Box>
@@ -33,7 +37,8 @@ export default function Profile() {
         <CardContent>
           <Stack spacing={3}>
             <Typography variant="h6">
-              Signed in as <strong>{user?.username || user?.displayName || 'User'}</strong>
+              Signed in as <strong>{displayName}</strong>
+              {providerLabel && <> via <strong>{providerLabel}</strong></>}
             </Typography>
 
             <Divider />
@@ -46,13 +51,12 @@ export default function Profile() {
               />
             )}
 
-            {user?.email && (
-              <InfoRow
-                icon={<EmailOutlinedIcon />}
-                label="Email"
-                value={user.email}
-              />
-            )}
+            <InfoRow
+              icon={<EmailOutlinedIcon />}
+              label="Email"
+              value={user?.email || 'Email is missing...'}
+              missing={!user?.email}
+            />
           </Stack>
         </CardContent>
       </Card>

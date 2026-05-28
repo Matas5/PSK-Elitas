@@ -33,9 +33,10 @@ import {
 import { ROUTES } from '../routes';
 
 function formatTick(time, withSeconds) {
-  return new Intl.DateTimeFormat(undefined, {
-    month: 'short', day: 'numeric',
+  return new Intl.DateTimeFormat('lt', {
+    month: '2-digit', day: '2-digit',
     hour: '2-digit', minute: '2-digit',
+    hour12: false,
     ...(withSeconds ? { second: '2-digit' } : {}),
   }).format(new Date(time));
 }

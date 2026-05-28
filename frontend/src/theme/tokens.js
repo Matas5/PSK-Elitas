@@ -1,17 +1,19 @@
 const brand = {
-  primary: '#05668D',
-  primaryLight: '#427AA1',
-  primaryDark: '#02475F',
+  primary: '#242F40',
+  primaryLight: '#3D4A60',
+  primaryDark: '#161E2A',
   contrast: '#FFFFFF',
+  secondaryLight: '#5C6B7F',
+  secondaryDark: '#0E1620',
 };
 
 const neutral = {
   white: '#FFFFFF',
   offWhite: '#FAFAFA',
   sunken: '#F2F2F2',
-  border: 'rgba(0, 0, 0, 0.08)',
-  hover: 'rgba(0, 0, 0, 0.04)',
-  activeBg: 'rgba(0, 0, 0, 0.05)',
+  border: '#E0E0E0',
+  hover: '#EFEFEF',
+  activeBg: '#E5E5E5',
 };
 
 const text = {

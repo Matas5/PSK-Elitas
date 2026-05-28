@@ -11,8 +11,14 @@ const lightPalette = {
   },
   secondary: {
     main: brand.primaryLight,
-    light: '#6F9CC0',
-    dark: '#2E5A78',
+    light: brand.secondaryLight,
+    dark: brand.secondaryDark,
+    contrastText: brand.contrast,
+  },
+  info: {
+    main: text.secondary,
+    light: neutral.activeBg,
+    dark: text.primary,
     contrastText: brand.contrast,
   },
   background: {
@@ -25,6 +31,9 @@ const lightPalette = {
     disabled: text.disabled,
   },
   divider: neutral.border,
+  TableCell: {
+    border: neutral.border,
+  },
   risk,
   surface: {
     sunken: neutral.sunken,
@@ -38,7 +47,6 @@ const lightPalette = {
     hover: neutral.hover,
     activeBg: neutral.activeBg,
     activeAccent: brand.primary,
-    providerChipBg: neutral.activeBg,
   },
 };
 

@@ -13,8 +13,6 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
-import Divider from '@mui/material/Divider';
-import Chip from '@mui/material/Chip';
 
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
@@ -22,7 +20,6 @@ import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
-import FiberManualRecordIcon from '@mui/icons-material/FiberManualRecord';
 
 import { useAuth } from '../auth/AuthContext';
 import { useNotification } from '../context/NotificationContext';
@@ -32,9 +29,6 @@ import { ROUTES } from '../routes';
 const PRIMARY_NAV = [
   { to: ROUTES.RISKS, label: 'Risks', icon: <WarningAmberOutlinedIcon /> },
   { to: ROUTES.RISK_VALUES, label: 'Risk Values', icon: <TimelineOutlinedIcon /> },
-];
-
-const SECONDARY_NAV = [
   { to: ROUTES.REPORTS, label: 'Reports', icon: <AssessmentOutlinedIcon /> },
 ];
 
@@ -87,31 +81,6 @@ function NavListItem({ to, label, icon, onNavigate }) {
   );
 }
 
-function StatusChip({ provider }) {
-  if (!provider) return null;
-  const isLocal = provider === 'local';
-  const label = isLocal ? 'Connected via LOCAL' : 'Connected via Google';
-  return (
-    <Chip
-      size="small"
-      icon={<FiberManualRecordIcon sx={{ fontSize: 10 }} />}
-      label={label}
-      sx={{
-        height: 22,
-        fontSize: '0.7rem',
-        fontWeight: 600,
-        bgcolor: isLocal ? 'risk.yellow.soft' : 'sidebar.providerChipBg',
-        color: isLocal ? 'risk.yellow.main' : 'text.secondary',
-        '& .MuiChip-icon': {
-          color: isLocal ? 'risk.yellow.main' : 'text.secondary',
-          marginLeft: '6px',
-        },
-        '& .MuiChip-label': { px: 1 },
-      }}
-    />
-  );
-}
-
 function DrawerContent({ user, provider, onLogout, onNavigate }) {
   const displayName = user?.displayName || user?.username || 'User';
   const email = user?.email;
@@ -157,36 +126,14 @@ function DrawerContent({ user, provider, onLogout, onNavigate }) {
             </Typography>
           </Box>
         </Stack>
-        <StatusChip provider={provider} />
       </Box>
 
-      <Divider sx={{ borderColor: 'sidebar.border' }} />
-
-      <List sx={{ px: 1.5, py: 1.5, flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+      <List sx={{ px: 1.5, py: 1.5, flexGrow: 1 }}>
         {PRIMARY_NAV.map((item) => (
           <NavListItem key={item.to} {...item} onNavigate={onNavigate} />
         ))}
-
-        <Box sx={{ mt: 'auto' }}>
-          <Box
-            aria-hidden
-            sx={{
-              width: 40,
-              height: 3,
-              borderRadius: 2,
-              bgcolor: 'sidebar.border',
-              mx: 'auto',
-              my: 1.5,
-            }}
-          />
-
-          {SECONDARY_NAV.map((item) => (
-            <NavListItem key={item.to} {...item} onNavigate={onNavigate} />
-          ))}
-        </Box>
       </List>
 
-      <Divider sx={{ borderColor: 'sidebar.border' }} />
       <Box sx={{ px: 2, py: 2 }}>
         <Box
           component={NavLink}

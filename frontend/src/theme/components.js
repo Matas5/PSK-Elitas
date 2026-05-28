@@ -77,6 +77,9 @@ const components = {
   },
   MuiTableCell: {
     styleOverrides: {
+      root: ({ theme }) => ({
+        borderColor: theme.palette.divider,
+      }),
       head: ({ theme }) => ({
         fontWeight: 700,
         color: theme.palette.text.secondary,

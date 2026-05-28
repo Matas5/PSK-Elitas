@@ -21,8 +21,6 @@ export function AuthProvider({ children }) {
   const [justLoggedIn, setJustLoggedIn] = useState(false);
   const prevUserRef = useRef(user);
 
-  // Discover the active auth provider from the backend, then (if Google)
-  // restore the session via the external auth server's /user endpoint.
   useEffect(() => {
     const bootstrap = async () => {
       let activeProvider = 'google';

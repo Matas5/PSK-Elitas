@@ -94,7 +94,7 @@ export default function ConflictDialog({
                     Last modified
                   </Typography>
                   <Typography variant="body2">
-                    {new Date(serverData.modifiedAt).toLocaleString()} by {serverData.modifiedBy}
+                    {new Date(serverData.modifiedAt).toLocaleString('lt')} by {serverData.modifiedBy}
                   </Typography>
                 </Box>
               </Stack>

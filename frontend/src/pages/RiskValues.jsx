@@ -31,11 +31,13 @@ import Typography from '@mui/material/Typography';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import RefreshIcon from '@mui/icons-material/Refresh';
 
 import { listRisks } from '../api/risksApi';
 import { deleteRiskValue, listRiskValues, updateRiskValue } from '../api/riskValuesApi';
 import LogRiskValueDialog from '../components/LogRiskValueDialog';
 import { useNotification } from '../context/NotificationContext';
+import { dateInputProps } from '../constants/risk';
 
 function formatDateTime(value) {
   if (!value) return '-';
@@ -43,8 +45,8 @@ function formatDateTime(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '-';
 
-  return new Intl.DateTimeFormat(undefined, {
-    dateStyle: 'medium',
+  return new Intl.DateTimeFormat('lt', {
+    dateStyle: 'short',
     timeStyle: 'short',
   }).format(date);
 }
@@ -195,6 +197,7 @@ function EditRiskValueDialog({ entry, risk, onClose, onSaved }) {
             error={Boolean(errors.recordedAt)}
             helperText={errors.recordedAt || ' '}
             InputLabelProps={{ shrink: true }}
+            inputProps={dateInputProps(risk)}
           />
           {submitError && <Alert severity="error">{submitError}</Alert>}
         </Stack>
@@ -449,9 +452,13 @@ export default function RiskValues() {
               ))}
             </Select>
           </FormControl>
-          <Button onClick={loadRiskList} disabled={risksLoading}>
-            Refresh risks
-          </Button>
+          <Tooltip title="Refresh risks">
+            <span>
+              <IconButton onClick={loadRiskList} disabled={risksLoading} size="small">
+                <RefreshIcon fontSize="small" />
+              </IconButton>
+            </span>
+          </Tooltip>
         </Stack>
         {risksLoading && (
           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 2 }}>
