@@ -31,6 +31,7 @@ import RiskLevelIndicator from '../components/RiskLevelIndicator';
 import { useNotification } from '../context/NotificationContext';
 import { useTeam } from '../context/TeamContext';
 import {
+  RISK_LEVELS,
   formatDirection,
   formatFrequency,
   formatThresholds,
@@ -204,30 +205,46 @@ export default function Risks() {
         </Button>
       </Stack>
 
-      {activeTeam && strategies.length > 1 && (
+      {activeTeam && !loading && !loadError && risks.length > 0 && (
         <Stack
           direction="row"
-          spacing={1.5}
+          spacing={2}
           alignItems="center"
+          justifyContent="space-between"
           flexWrap="wrap"
-          sx={{ mb: 2 }}
+          sx={{ mb: 2, gap: 1.5 }}
         >
-          <Typography variant="body2" color="text.secondary">
-            Ranking strategy
-          </Typography>
-          <ToggleButtonGroup
-            size="small"
-            exclusive
-            value={strategy}
-            onChange={handleStrategyChange}
-            disabled={switching}
-          >
-            {strategies.map((name) => (
-              <ToggleButton key={name} value={name}>
-                {STRATEGY_LABELS[name] || name}
-              </ToggleButton>
+          {strategies.length > 1 ? (
+            <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+              <Typography variant="body2" color="text.secondary">
+                Ranking strategy
+              </Typography>
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={strategy}
+                onChange={handleStrategyChange}
+                disabled={switching}
+              >
+                {strategies.map((name) => (
+                  <ToggleButton key={name} value={name}>
+                    {STRATEGY_LABELS[name] || name}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </Stack>
+          ) : <Box />}
+
+          <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+            {Object.entries(RISK_LEVELS).map(([key, meta]) => (
+              <Stack key={key} direction="row" spacing={0.75} alignItems="center">
+                <RiskLevelIndicator level={key} />
+                <Typography variant="caption" color="text.secondary">
+                  Level: {meta.label}
+                </Typography>
+              </Stack>
             ))}
-          </ToggleButtonGroup>
+          </Stack>
         </Stack>
       )}
 

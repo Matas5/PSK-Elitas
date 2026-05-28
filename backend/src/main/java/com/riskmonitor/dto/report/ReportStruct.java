@@ -34,9 +34,10 @@ public final class ReportStruct {
         }
     }
 
-    // chart PNG sent from the browser; dataBase64 may be a data URL or raw base64
-    public record PngUploadReq(
+    // a file the browser built (chart PNG or per-risk CSV); dataBase64 may be a data URL or raw base64
+    public record UploadReq(
             @NotBlank String fileName,
-            @NotBlank String dataBase64
+            @NotBlank String dataBase64,
+            @NotBlank String kind
     ) {}
 }

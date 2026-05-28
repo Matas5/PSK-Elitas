@@ -46,15 +46,15 @@ export async function requestCsvReport(teamId) {
     return response.json();
 }
 
-export async function uploadPngReport(teamId, blob, fileName) {
+export async function uploadReport(teamId, blob, fileName, kind) {
     if (!teamId) throw new Error("No active team selected");
     const dataBase64 = await blobToDataUrl(blob);
-    const response = await fetch(`/api/reports/png?teamId=${encodeURIComponent(teamId)}`, {
+    const response = await fetch(`/api/reports/upload?teamId=${encodeURIComponent(teamId)}`, {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ fileName, dataBase64 }),
+        body: JSON.stringify({ fileName, dataBase64, kind }),
     });
-    if (!response.ok) throw await parseError(response, "Save chart failed");
+    if (!response.ok) throw await parseError(response, "Save failed");
     return response.json();
 }
 

@@ -122,8 +122,9 @@ public interface RiskValueRepository extends JpaRepository<RiskValue, UUID> {
 @Transactional(readOnly = true)
 public Risk getRisk(UUID id, String userId) { ... }
 
+@Async
 @Transactional(readOnly = true)
-public List<Risk> listRisks(String userId) { ... }
+public CompletableFuture<List<RiskResp>> listRisks(String userId, UUID teamId) { ... }
 
 @Transactional
 public Risk createRisk(RiskCreateReq req, String userId) { ... }

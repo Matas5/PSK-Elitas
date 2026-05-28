@@ -35,11 +35,13 @@ export default function RiskLevelIndicator({ level }) {
     return null;
   }
 
+  const description = `${meta.colorName} ${meta.shape} - Level: ${meta.label}`;
+
   return (
-    <Tooltip title={`${meta.label} risk`} arrow>
+    <Tooltip title={description} arrow>
       <Box
         role="img"
-        aria-label={`${meta.label} risk`}
+        aria-label={description}
         sx={{
           width: BADGE_SIZE,
           height: BADGE_SIZE,

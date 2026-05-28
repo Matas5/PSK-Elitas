@@ -19,7 +19,7 @@ import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
-import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
+import TableRowsOutlinedIcon from '@mui/icons-material/TableRowsOutlined';
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 import ShowChartOutlinedIcon from '@mui/icons-material/ShowChartOutlined';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
@@ -36,9 +36,9 @@ import { ROUTES } from '../routes';
 const PRIMARY_NAV = [
   { to: ROUTES.TEAMS, label: 'Teams', icon: <GroupsOutlinedIcon /> },
   { to: ROUTES.RISKS, label: 'Risks', icon: <WarningAmberOutlinedIcon /> },
-  { to: ROUTES.RISK_VALUES, label: 'Risk Values', icon: <TimelineOutlinedIcon /> },
+  { to: ROUTES.RISK_VALUES, label: 'Risk Values', icon: <TableRowsOutlinedIcon /> },
   { to: ROUTES.RISK_GRAPHS, label: 'Risk Graphs', icon: <ShowChartOutlinedIcon /> },
-  { to: ROUTES.REPORTS, label: 'Reports', icon: <AssessmentOutlinedIcon /> },
+  { to: ROUTES.DOWNLOADS, label: 'Downloads', icon: <AssessmentOutlinedIcon /> },
 ];
 
 const HOST_ORG = import.meta.env.VITE_HOST_ORG || 'Bulvinuk.ai Limited.';

@@ -86,6 +86,36 @@ public CompletableFuture<List<RiskResp>> listRisks(@CurrentUserId String userId,
 
 ---
 
+## Example 6: the artificial buffer (so the status is visible)
+
+**How it works:** on this data the CSV builds in a few milliseconds, so the row would flip PENDING to READY too fast to ever see it. `simulateWork()` is an artificial buffer: it holds the job in PENDING for a configured number of ms (default 4000), long enough to actually watch the status change while you poke around the page and confirm it stays responsive. Set the value to 0 to turn the buffer off.
+
+**File:** [backend/src/main/java/com/riskmonitor/service/ReportGenerator.java](backend/src/main/java/com/riskmonitor/service/ReportGenerator.java)
+
+```java
+@Value("${riskmonitor.reports.simulated-delay-ms:4000}")
+private long simulatedDelayMs;
+
+private void simulateWork() {
+    if (simulatedDelayMs <= 0) {
+        return;
+    }
+    try {
+        Thread.sleep(simulatedDelayMs);
+    } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
+    }
+}
+```
+
+**File:** [backend/src/main/resources/application.properties](backend/src/main/resources/application.properties)
+
+```properties
+riskmonitor.reports.simulated-delay-ms=4000
+```
+
+---
+
 ## What you see
 
 The backend log shows the work on a `task-N` thread, with a gap between "running" and "ready" while the POST already returned:

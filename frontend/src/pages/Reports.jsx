@@ -123,10 +123,10 @@ export default function Reports() {
         sx={{ mb: 3 }}
       >
         <Box>
-          <Typography variant="h1" gutterBottom>Reports</Typography>
+          <Typography variant="h1" gutterBottom>Downloads</Typography>
           <Typography variant="body2" color="text.secondary">
-            Generate exports of your team&apos;s risk data and download them. Charts saved from the
-            graph view also show up here.
+            Generate exports of your team&apos;s risk data and download them. Charts and CSVs saved
+            from the graph view also show up here.
           </Typography>
         </Box>
         <Button

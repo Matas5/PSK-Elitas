@@ -17,8 +17,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class AverageSeveritySortStrategy implements RiskSortStrategy {
 
-    private static final double HIGH_LEVEL_THRESHOLD = 1.30;    // mean (out of 2.0) >= this -> HIGH
-    private static final double MEDIUM_LEVEL_THRESHOLD = 0.95;  // >= this -> MEDIUM, else LOW
+    // mean severity runs 0-2: 1.30+ is HIGH, 0.95+ MEDIUM, otherwise LOW
+    private static final double HIGH_LEVEL_THRESHOLD = 1.30;
+    private static final double MEDIUM_LEVEL_THRESHOLD = 0.95;
 
     private final RiskValueRepository riskValueRepository;
 

@@ -53,8 +53,8 @@ public RiskResp updateRisk(UUID id, RiskUpdateReq req, String userId) {
 
 ### DTOs: Include Version
 **Files:**
-- [backend/src/main/java/com/riskmonitor/dto/risk/RiskUpdateReq.java](backend/src/main/java/com/riskmonitor/dto/risk/RiskUpdateReq.java) - includes `@NotNull Long version`
-- [backend/src/main/java/com/riskmonitor/dto/risk/RiskResp.java](backend/src/main/java/com/riskmonitor/dto/risk/RiskResp.java) - returns `Long version`
+- [backend/src/main/java/com/riskmonitor/dto/risk/RiskStruct.java](backend/src/main/java/com/riskmonitor/dto/risk/RiskStruct.java) - `RiskUpdateReq` includes `@NotNull Long version`
+- [backend/src/main/java/com/riskmonitor/dto/risk/RiskStruct.java](backend/src/main/java/com/riskmonitor/dto/risk/RiskStruct.java) - `RiskResp` returns `Long version`
 
 ---
 

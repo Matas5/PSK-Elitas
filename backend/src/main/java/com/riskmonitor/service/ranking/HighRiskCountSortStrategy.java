@@ -17,8 +17,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class HighRiskCountSortStrategy implements RiskSortStrategy {
 
-    private static final long HIGH_LEVEL_THRESHOLD = 7;    // >= this many HIGH readings -> HIGH
-    private static final long MEDIUM_LEVEL_THRESHOLD = 2;  // >= this -> MEDIUM, else LOW
+    // 7+ HIGH readings makes the risk HIGH, 2+ MEDIUM, otherwise LOW
+    private static final long HIGH_LEVEL_THRESHOLD = 7;
+    private static final long MEDIUM_LEVEL_THRESHOLD = 2;
 
     private final RiskValueRepository riskValueRepository;
 

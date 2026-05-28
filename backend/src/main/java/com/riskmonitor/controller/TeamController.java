@@ -57,7 +57,7 @@ public class TeamController {
             @PathVariable UUID teamId
     ) {
         return teamService.getTeamMembers(teamId, userId).stream()
-                .map(TeamMemberResponse::from)
+                .map(m -> TeamMemberResponse.from(m, teamService.resolveDisplayName(m.getUserId())))
                 .toList();
     }
 }

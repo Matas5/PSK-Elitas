@@ -4,23 +4,28 @@ import { Link as RouterLink, useParams, useSearchParams } from 'react-router-dom
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Checkbox from '@mui/material/Checkbox';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import FormControl from '@mui/material/FormControl';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import IconButton from '@mui/material/IconButton';
 import InputLabel from '@mui/material/InputLabel';
+import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Select from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
 import MuiTooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import {
+  Area,
+  ComposedChart,
   LabelList,
   Line,
-  LineChart,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -31,7 +36,7 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import dayjs from 'dayjs';
 
-import { uploadPngReport } from '../api/reportsApi';
+import { uploadReport } from '../api/reportsApi';
 import { getRisk, listRisks } from '../api/risksApi';
 import { listAllRiskValues } from '../api/riskValuesApi';
 import {
@@ -44,6 +49,7 @@ import { useLocale } from '../context/LocaleContext.jsx';
 import { useNotification } from '../context/NotificationContext';
 import { useTeam } from '../context/TeamContext';
 import { ROUTES } from '../routes';
+import { tokens } from '../theme/tokens';
 
 const PICKER_VIEWS_WITH_SECONDS = ['year', 'month', 'day', 'hours', 'minutes', 'seconds'];
 const PICKER_VIEWS = ['year', 'month', 'day', 'hours', 'minutes'];
@@ -97,10 +103,58 @@ function buildThresholds(risk) {
     .map(([key, level]) => ({ y: Number(risk[key]), level }));
 }
 
+// sanity bounds so a fat-fingered y-axis value can't blow up the chart
+const Y_HARD_MIN = -1e9;
+const Y_HARD_MAX = 1e9;
+
+function clampY(v) {
+  return Math.max(Y_HARD_MIN, Math.min(Y_HARD_MAX, v));
+}
+
+// contiguous horizontal regions across [min,max], split at the risk's thresholds,
+// each tagged by classifying the region midpoint (works for upper-only / lower-only / both)
+function buildBands(risk, domain) {
+  if (!risk || !Array.isArray(domain) || !Number.isFinite(domain[0]) || !Number.isFinite(domain[1])) {
+    return [];
+  }
+  const [min, max] = domain;
+  const cuts = buildThresholds(risk).map((t) => t.y).filter((y) => y > min && y < max);
+  const bounds = Array.from(new Set([min, ...cuts, max])).sort((a, b) => a - b);
+  const bands = [];
+  for (let i = 0; i < bounds.length - 1; i += 1) {
+    bands.push({ y1: bounds[i], y2: bounds[i + 1], level: classifyRiskLevel(risk, (bounds[i] + bounds[i + 1]) / 2) });
+  }
+  return bands;
+}
+
+const clamp01 = (v) => Math.max(0, Math.min(1, v));
+
+// vertical gradient stops (top = domain max) blending green->yellow->red across the risk
+// zones, so the area fill under the line is tinted by how high the value sits
+function riskGradientStops(risk, domain) {
+  const bands = buildBands(risk, domain);
+  if (bands.length === 0) return [];
+  const [min, max] = domain;
+  const span = max - min || 1;
+  const offsetOf = (y) => clamp01((max - y) / span); // 0 at top (max), 1 at bottom (min)
+  const stops = bands.map((b) => ({
+    offset: offsetOf((b.y1 + b.y2) / 2),
+    color: RISK_LEVELS[b.level].color,
+  }));
+  stops.push({ offset: 0, color: RISK_LEVELS[bands[bands.length - 1].level].color });
+  stops.push({ offset: 1, color: RISK_LEVELS[bands[0].level].color });
+  return stops.sort((a, b) => a.offset - b.offset);
+}
+
+function buildRiskCsv(rows) {
+  const body = rows.map((p) => `"${new Date(p.time).toISOString()}","${p.value}",${p.level}`).join('\n');
+  return `Recorded At,Value,Level\n${body}\n`;
+}
+
 function ColoredDot({ cx, cy, payload }) {
   if (cx == null || cy == null) return null;
   return (
-    <circle cx={cx} cy={cy} r={7} fill={RISK_LEVELS[payload.level].color} stroke="#fff" strokeWidth={2} />
+    <circle cx={cx} cy={cy} r={8.5} fill={RISK_LEVELS[payload.level].color} stroke="#fff" strokeWidth={2.5} />
   );
 }
 
@@ -182,18 +236,6 @@ function chartToPngBlob(container) {
   });
 }
 
-function downloadSvgAsPng(container, filename) {
-  chartToPngBlob(container)
-    .then((blob) => {
-      const link = document.createElement('a');
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      link.click();
-      URL.revokeObjectURL(link.href);
-    })
-    .catch(() => {});
-}
-
 export default function RiskGraph() {
   const { locale } = useLocale();
   const { activeTeam } = useTeam();
@@ -211,7 +253,16 @@ export default function RiskGraph() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const [savingChart, setSavingChart] = useState(false);
+  const [showLine, setShowLine] = useState(true);
+  const [showPoints, setShowPoints] = useState(true);
+  const [showArea, setShowArea] = useState(true);
+  const [showThresholds, setShowThresholds] = useState(true);
+  const [yMin, setYMin] = useState('');
+  const [yMax, setYMax] = useState('');
+  const [yStep, setYStep] = useState('');
+  const [saveAnchor, setSaveAnchor] = useState(null);
   const chartRef = useRef(null);
+  const yPrefilledFor = useRef(null);
   const activeTeamId = activeTeam?.id || '';
   const selectedRisk = useMemo(
     () => risks.find((item) => item.id === selectedRiskId) || null,
@@ -323,20 +374,56 @@ export default function RiskGraph() {
     return niceScale(Math.min(...numeric), Math.max(...numeric));
   }, [chartData, thresholds]);
 
+  // prefill the y-range inputs with the chart's auto min/max, once per risk (user can then edit)
+  useEffect(() => {
+    const [lo, hi] = yScale.domain;
+    if (Number.isFinite(lo) && Number.isFinite(hi) && yPrefilledFor.current !== risk?.id) {
+      setYMin(String(lo));
+      setYMax(String(hi));
+      yPrefilledFor.current = risk?.id;
+    }
+  }, [risk, yScale]);
+
+  // user-set y-range (clamped) overrides the auto scale when both ends are valid
+  const customY = useMemo(() => {
+    const lo = clampY(parseFloat(yMin));
+    const hi = clampY(parseFloat(yMax));
+    return Number.isFinite(lo) && Number.isFinite(hi) && lo < hi ? [lo, hi] : null;
+  }, [yMin, yMax]);
+
+  const yDomain = customY || yScale.domain;
+  const areaStops = useMemo(() => riskGradientStops(risk, yDomain), [risk, yDomain]);
+
+  // y-axis tick spacing: explicit step keeps min and max, else fall back to the auto ticks
+  const yTicks = useMemo(() => {
+    const [lo, hi] = yDomain;
+    const step = parseFloat(yStep);
+    if (!Number.isFinite(lo) || !Number.isFinite(hi) || !Number.isFinite(step) || step <= 0) {
+      return customY ? undefined : yScale.ticks;
+    }
+    if ((hi - lo) / step > 1000) return undefined; // guard against a tiny step exploding the axis
+    const ticks = [];
+    for (let v = lo; v <= hi + step / 1e6; v += step) ticks.push(Math.round(v * 1e6) / 1e6);
+    if (ticks[ticks.length - 1] !== hi) ticks.push(hi); // always keep the max
+    return ticks;
+  }, [yDomain, yStep, customY, yScale.ticks]);
+
   const safeChartName = () => (risk?.name || 'risk-graph').replace(/[^a-z0-9-_]+/gi, '-');
 
-  const handleDownload = () => {
-    downloadSvgAsPng(chartRef.current, `${safeChartName()}.png`);
-  };
-
-  const handleSaveToReports = async () => {
+  const handleSave = async (kind) => {
+    setSaveAnchor(null);
     setSavingChart(true);
     try {
-      const blob = await chartToPngBlob(chartRef.current);
-      await uploadPngReport(activeTeamId, blob, `${safeChartName()}.png`);
-      showNotification('Chart saved to Reports.', 'success');
+      let blob;
+      if (kind === 'csv') {
+        blob = new Blob([buildRiskCsv(chartData)], { type: 'text/csv' });
+      } else {
+        blob = await chartToPngBlob(chartRef.current);
+      }
+      await uploadReport(activeTeamId, blob, `${safeChartName()}.${kind}`, kind);
+      showNotification(`Saved ${kind.toUpperCase()} to Downloads, get it there.`, 'success');
     } catch (err) {
-      showNotification(err.message || 'Failed to save chart.', 'error');
+      showNotification(err.message || 'Failed to save.', 'error');
     } finally {
       setSavingChart(false);
     }
@@ -483,20 +570,64 @@ export default function RiskGraph() {
                 slotProps={{ textField: { fullWidth: true } }}
               />
               <Button
-                onClick={handleDownload}
-                disabled={chartData.length === 0}
+                onClick={() => { setFromDate(''); setToDate(''); }}
+                disabled={!fromDate && !toDate}
               >
-                Download
+                Clear dates
               </Button>
+            </Stack>
+
+            <Stack
+              direction="row"
+              spacing={2}
+              sx={{ mb: 3 }}
+              alignItems="center"
+              flexWrap="wrap"
+              useFlexGap
+            >
+              <FormControlLabel
+                control={<Checkbox size="small" checked={showLine} onChange={(e) => setShowLine(e.target.checked)} />}
+                label="Line"
+              />
+              <FormControlLabel
+                control={<Checkbox size="small" checked={showPoints} onChange={(e) => setShowPoints(e.target.checked)} />}
+                label="Points"
+              />
+              <FormControlLabel
+                control={<Checkbox size="small" checked={showArea} onChange={(e) => setShowArea(e.target.checked)} />}
+                label="Area"
+              />
+              <FormControlLabel
+                control={<Checkbox size="small" checked={showThresholds} onChange={(e) => setShowThresholds(e.target.checked)} />}
+                label="Thresholds"
+              />
+              <TextField
+                label="Y min" type="number" size="small"
+                value={yMin} onChange={(e) => setYMin(e.target.value)}
+                sx={{ width: 100 }}
+              />
+              <TextField
+                label="Y max" type="number" size="small"
+                value={yMax} onChange={(e) => setYMax(e.target.value)}
+                sx={{ width: 100 }}
+              />
+              <TextField
+                label="Y step" type="number" size="small"
+                value={yStep} onChange={(e) => setYStep(e.target.value)}
+                sx={{ width: 100 }}
+              />
+              <Box sx={{ flexGrow: 1 }} />
               <Button
-                onClick={handleSaveToReports}
+                variant="outlined"
+                onClick={(e) => setSaveAnchor(e.currentTarget)}
                 disabled={chartData.length === 0 || savingChart}
               >
-                {savingChart ? 'Saving…' : 'Save to Reports'}
+                {savingChart ? 'Saving…' : 'Save for download as...'}
               </Button>
-              <Button onClick={() => { setFromDate(''); setToDate(''); }}>
-                Clear
-              </Button>
+              <Menu anchorEl={saveAnchor} open={Boolean(saveAnchor)} onClose={() => setSaveAnchor(null)}>
+                <MenuItem onClick={() => handleSave('csv')}>Save as CSV</MenuItem>
+                <MenuItem onClick={() => handleSave('png')}>Save as PNG</MenuItem>
+              </Menu>
             </Stack>
 
             {chartData.length === 0 ? (
@@ -504,7 +635,14 @@ export default function RiskGraph() {
             ) : (
               <Box ref={chartRef} sx={{ width: '100%', height: 460 }}>
                 <ResponsiveContainer>
-                  <LineChart data={chartData} margin={{ top: 32, right: 64, bottom: 16, left: 24 }}>
+                  <ComposedChart data={chartData} margin={{ top: 32, right: 64, bottom: 16, left: 24 }}>
+                    <defs>
+                      <linearGradient id="riskFill" x1="0" y1="0" x2="0" y2="1">
+                        {areaStops.map((s, i) => (
+                          <stop key={i} offset={`${(s.offset * 100).toFixed(1)}%`} stopColor={s.color} stopOpacity={0.35} />
+                        ))}
+                      </linearGradient>
+                    </defs>
                     <XAxis
                       dataKey="time" type="number" scale="time"
                       domain={['dataMin', 'dataMax']}
@@ -512,8 +650,9 @@ export default function RiskGraph() {
                       tick={{ fontSize: 12 }} tickMargin={8}
                     />
                     <YAxis
-                      domain={yScale.domain}
-                      ticks={yScale.ticks}
+                      domain={yDomain}
+                      ticks={yTicks}
+                      allowDataOverflow={Boolean(customY) || Boolean(yTicks)}
                       width={80}
                       tick={{ fontSize: 12 }} tickMargin={8}
                       label={{
@@ -521,15 +660,26 @@ export default function RiskGraph() {
                         style: { textAnchor: 'middle', fontSize: 15, fontWeight: 700, fill: '#424242' },
                       }}
                     />
+                    {showArea && areaStops.length > 0 && (
+                      <Area
+                        dataKey="value"
+                        stroke="none"
+                        fill="url(#riskFill)"
+                        fillOpacity={1}
+                        dot={false}
+                        activeDot={false}
+                        isAnimationActive={false}
+                      />
+                    )}
                     <Tooltip content={<ChartTooltip risk={risk} locale={locale} />}
                              cursor={{ stroke: '#bdbdbd', strokeDasharray: '3 3' }} />
-                    {thresholds.map((t) => (
+                    {showThresholds && thresholds.map((t) => (
                       <ReferenceLine
                         key={`${t.level}-${t.y}`}
                         y={t.y}
                         stroke={RISK_LEVELS[t.level].color}
-                        strokeWidth={1}
-                        strokeDasharray="6 4"
+                        strokeWidth={2.25}
+                        strokeDasharray="8 5"
                         label={{
                           value: t.y, position: 'right',
                           fill: RISK_LEVELS[t.level].color, fontSize: 12, fontWeight: 700,
@@ -538,14 +688,15 @@ export default function RiskGraph() {
                     ))}
                     <Line
                       dataKey="value"
-                      stroke="none"
-                      dot={<ColoredDot />}
+                      stroke={showLine ? tokens.text.secondary : 'none'}
+                      strokeWidth={2.5}
+                      dot={showPoints ? <ColoredDot /> : false}
                       activeDot={false}
                       isAnimationActive={false}
                     >
-                      <LabelList dataKey="value" content={<ValuePill />} />
+                      {showPoints && <LabelList dataKey="value" content={<ValuePill />} />}
                     </Line>
-                  </LineChart>
+                  </ComposedChart>
                 </ResponsiveContainer>
               </Box>
             )}

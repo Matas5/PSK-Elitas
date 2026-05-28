@@ -246,7 +246,7 @@ export default function Teams() {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>User ID</TableCell>
+                      <TableCell>Member</TableCell>
                       <TableCell>Role</TableCell>
                       <TableCell>Joined</TableCell>
                     </TableRow>
@@ -254,7 +254,7 @@ export default function Teams() {
                   <TableBody>
                     {members.map((member) => (
                       <TableRow key={member.id}>
-                        <TableCell>{member.userId}</TableCell>
+                        <TableCell>{member.displayName || member.userId}</TableCell>
                         <TableCell><Chip size="small" label={member.role} /></TableCell>
                         <TableCell>{new Date(member.joinedAt).toLocaleString()}</TableCell>
                       </TableRow>

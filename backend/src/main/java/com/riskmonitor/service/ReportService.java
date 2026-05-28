@@ -27,8 +27,8 @@ public class ReportService {
     private final TeamService teamService;
     private final ReportGenerator reportGenerator;
 
-    // not @Transactional: we save (and commit) the PENDING row first, THEN fire the async job,
-    // so the worker thread is guaranteed to see the committed row.
+    // save the PENDING row first so it's committed before we fire the async job,
+    // otherwise the worker could look it up before it exists. that's why this isn't @Transactional.
     public Report requestCsv(String userId, UUID teamId) {
         teamService.assertUserIsTeamMember(teamId, userId);
         String fileName = "risk-report-" + STAMP.format(Instant.now()) + ".csv";
@@ -39,10 +39,11 @@ public class ReportService {
     }
 
     @Transactional
-    public Report saveUploadedPng(String userId, UUID teamId, String fileName, byte[] bytes) {
+    public Report saveUploaded(String userId, UUID teamId, String fileName, byte[] bytes,
+                               ReportType reportType, String contentType) {
         teamService.assertUserIsTeamMember(teamId, userId);
-        Report report = new Report(userId, teamId, ensurePngName(fileName), "image/png",
-                ReportType.CHART_PNG, ReportStatus.READY);
+        String name = (fileName == null || fileName.isBlank()) ? "export" : fileName.trim();
+        Report report = new Report(userId, teamId, name, contentType, reportType, ReportStatus.READY);
         report.markReady(bytes);
         return reportRepository.save(report);
     }
@@ -64,10 +65,5 @@ public class ReportService {
         Report report = reportRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Report not found: " + id));
         reportRepository.delete(report);
-    }
-
-    private static String ensurePngName(String fileName) {
-        String name = (fileName == null || fileName.isBlank()) ? "chart" : fileName.trim();
-        return name.toLowerCase().endsWith(".png") ? name : name + ".png";
     }
 }

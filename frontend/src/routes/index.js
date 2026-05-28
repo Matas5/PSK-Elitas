@@ -7,6 +7,6 @@ export const ROUTES = Object.freeze({
   RISK_GRAPHS: '/risk-graphs',
   RISK_GRAPH: '/risks/:riskId/graph',
   RISK_VALUES: '/risk-values',
-  REPORTS: '/reports',
+  DOWNLOADS: '/downloads',
   PROFILE: '/profile',
 });

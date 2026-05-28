@@ -19,7 +19,8 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.riskmonitor.dto.report.ReportStatus;
-import com.riskmonitor.dto.report.ReportStruct.PngUploadReq;
+import com.riskmonitor.dto.report.ReportType;
+import com.riskmonitor.dto.report.ReportStruct.UploadReq;
 import com.riskmonitor.dto.report.ReportStruct.ReportResp;
 import com.riskmonitor.entity.Report;
 import com.riskmonitor.service.ReportService;
@@ -42,14 +43,17 @@ public class ReportController {
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ReportResp.from(report));
     }
 
-    @PostMapping("/png")
-    public ResponseEntity<ReportResp> uploadPng(
+    @PostMapping("/upload")
+    public ResponseEntity<ReportResp> upload(
             @RequestParam UUID teamId,
-            @Valid @RequestBody PngUploadReq request,
+            @Valid @RequestBody UploadReq request,
             @CurrentUserId String userId
     ) {
         byte[] bytes = decodeBase64(request.dataBase64());
-        Report report = reportService.saveUploadedPng(userId, teamId, request.fileName(), bytes);
+        boolean csv = "csv".equalsIgnoreCase(request.kind());
+        Report report = reportService.saveUploaded(userId, teamId, request.fileName(), bytes,
+                csv ? ReportType.RISK_CSV : ReportType.CHART_PNG,
+                csv ? "text/csv" : "image/png");
         return ResponseEntity.status(HttpStatus.CREATED).body(ReportResp.from(report));
     }
 
