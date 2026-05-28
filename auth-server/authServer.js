@@ -3,9 +3,10 @@ import passport from "passport";
 import session from "express-session";
 import cors from "cors";
 import dotenv from "dotenv";
+import path from "path";
 import authRoutes from "./routes/AuthRoutes.js";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(import.meta.dirname, "../.env") });
 
 const app = express();
 const PORT = process.env.AUTH_PORT || 3000;

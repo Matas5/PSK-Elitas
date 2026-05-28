@@ -6,7 +6,7 @@ Risk-monitor app. Spring Boot 4 / Java 17 backend, React 19 + Vite + MUI fronten
 |-------------|-------------|---------------------|
 | Frontend    | 5173        | `frontend/`         |
 | Backend     | 8081        | `backend/`          |
-| Auth server | 3000        | `authServer.js`     |
+| Auth server | 3000        | `auth-server/`      |
 | PostgreSQL  | 5433        | `docker-compose.yml`|
 
 ---
@@ -81,11 +81,13 @@ Open a Pull Request from your feature branch into `Dev`. At the end of the sprin
 PSK-Elitas/
 ├── backend/             Spring Boot backend (Maven, Java 17)
 ├── frontend/            React + Vite frontend
-├── authServer.js        Node/Express auth server (Google OAuth)
-├── config/              Passport config
-├── routes/              Auth routes
+├── auth-server/         Node/Express auth server (Google OAuth)
+│   ├── authServer.js
+│   ├── passport.js
+│   ├── routes/
+│   ├── package.json
+│   └── Dockerfile
 ├── docker-compose.yml   Postgres + authserver + backend + frontend
-├── Dockerfile.auth      Auth server image
 ├── .env.example         Template for local secrets
 └── README.md
 ```
@@ -176,9 +178,10 @@ npm install
 npm run dev
 ```
 
-Auth server (new terminal, from repo root):
+Auth server (new terminal):
 
 ```bash
+cd auth-server
 npm install
 npm run dev                       # node --watch authServer.js
 ```

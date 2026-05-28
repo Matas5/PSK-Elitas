@@ -10,6 +10,7 @@ node_modules/
 # IDE
 .idea/
 .vscode/
+.todo/
 *.swp
 *.swo
 *~
@@ -38,6 +39,7 @@ PROJECT-INFO.md
 .direnv/
 result
 result-*
+shell.nix
 
 # Local-only deliverable drafts
 requirement_implementations/product-conception-diagram.html
