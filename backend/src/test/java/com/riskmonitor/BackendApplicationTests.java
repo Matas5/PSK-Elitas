@@ -3,6 +3,8 @@ package com.riskmonitor;
 import com.riskmonitor.repository.AppUserRepository;
 import com.riskmonitor.repository.RiskRepository;
 import com.riskmonitor.repository.RiskValueRepository;
+import com.riskmonitor.repository.TeamMemberRepository;
+import com.riskmonitor.repository.TeamRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -43,6 +45,16 @@ class BackendApplicationTests {
         @Bean
         RiskValueRepository riskValueRepository() {
             return repositoryProxy(RiskValueRepository.class);
+        }
+
+        @Bean
+        TeamRepository teamRepository() {
+            return repositoryProxy(TeamRepository.class);
+        }
+
+        @Bean
+        TeamMemberRepository teamMemberRepository() {
+            return repositoryProxy(TeamMemberRepository.class);
         }
 
         @SuppressWarnings("unchecked")

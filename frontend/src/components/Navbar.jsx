@@ -13,21 +13,28 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
 import Button from '@mui/material/Button';
+import FormControl from '@mui/material/FormControl';
+import InputLabel from '@mui/material/InputLabel';
+import MenuItem from '@mui/material/MenuItem';
+import Select from '@mui/material/Select';
 
 import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
 import TimelineOutlinedIcon from '@mui/icons-material/TimelineOutlined';
 import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 import ShowChartOutlinedIcon from '@mui/icons-material/ShowChartOutlined';
+import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
 
 import { useAuth } from '../auth/AuthContext';
 import { useNotification } from '../context/NotificationContext';
+import { useTeam } from '../context/TeamContext';
 import { layout } from '../theme';
 import { ROUTES } from '../routes';
 
 const PRIMARY_NAV = [
+  { to: ROUTES.TEAMS, label: 'Teams', icon: <GroupsOutlinedIcon /> },
   { to: ROUTES.RISKS, label: 'Risks', icon: <WarningAmberOutlinedIcon /> },
   { to: ROUTES.RISK_VALUES, label: 'Risk Values', icon: <TimelineOutlinedIcon /> },
   { to: ROUTES.RISK_GRAPHS, label: 'Risk Graphs', icon: <ShowChartOutlinedIcon /> },
@@ -84,9 +91,16 @@ function NavListItem({ to, label, icon, onNavigate }) {
 }
 
 function DrawerContent({ user, onLogout, onNavigate }) {
+  const { teams, activeTeamId, loading, selectTeam } = useTeam();
   const displayName = user?.displayName || user?.username || 'User';
   const email = user?.email;
   const initial = displayName.charAt(0).toUpperCase();
+  const selectedTeamId = teams.some((team) => team.id === activeTeamId) ? activeTeamId : '';
+
+  const handleTeamChange = (event) => {
+    selectTeam(event.target.value);
+    if (onNavigate) onNavigate();
+  };
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -128,6 +142,39 @@ function DrawerContent({ user, onLogout, onNavigate }) {
             </Typography>
           </Box>
         </Stack>
+        <FormControl
+          size="small"
+          fullWidth
+          disabled={loading || teams.length === 0}
+          sx={{
+            mt: 2,
+            '& .MuiInputLabel-root': { color: 'sidebar.textMuted' },
+            '& .MuiOutlinedInput-root': {
+              color: 'sidebar.text',
+              '& fieldset': { borderColor: 'sidebar.border' },
+              '&:hover fieldset': { borderColor: 'sidebar.activeAccent' },
+              '&.Mui-focused fieldset': { borderColor: 'sidebar.activeAccent' },
+            },
+            '& .MuiSvgIcon-root': { color: 'sidebar.textMuted' },
+          }}
+        >
+          <InputLabel id="sidebar-team-select-label">Team</InputLabel>
+          <Select
+            labelId="sidebar-team-select-label"
+            label="Team"
+            value={selectedTeamId}
+            onChange={handleTeamChange}
+          >
+            <MenuItem value="">
+              <em>No team selected</em>
+            </MenuItem>
+            {teams.map((team) => (
+              <MenuItem key={team.id} value={team.id}>
+                {team.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Box>
 
       <List sx={{ px: 1.5, py: 1.5, flexGrow: 1 }}>

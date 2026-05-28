@@ -11,7 +11,7 @@ import { useNotification } from './context/NotificationContext';
 import { layout } from './theme';
 import { ROUTES } from './routes';
 
-import { LocalRegister, Login, Profile, Reports, RiskGraph, Risks, RiskValues } from './pages';
+import { LocalRegister, Login, Profile, Reports, RiskGraph, Risks, RiskValues, Teams } from './pages';
 
 function AuthedShell({ children }) {
   const { justLoggedIn, clearJustLoggedIn } = useAuth();
@@ -57,6 +57,15 @@ export default function App() {
       <Routes>
         <Route path={ROUTES.LOGIN} element={<Login />} />
         <Route path={ROUTES.REGISTER} element={<LocalRegister />} />
+
+        <Route
+          path={ROUTES.TEAMS}
+          element={(
+            <RequireAuth>
+              <AuthedShell><Teams /></AuthedShell>
+            </RequireAuth>
+          )}
+        />
 
         <Route
           path={ROUTES.RISKS}

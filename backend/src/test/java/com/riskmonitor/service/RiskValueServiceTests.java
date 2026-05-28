@@ -7,8 +7,11 @@ import com.riskmonitor.config.SystemProperties;
 import com.riskmonitor.entity.AuditContext;
 import com.riskmonitor.entity.Risk;
 import com.riskmonitor.entity.RiskValue;
+import com.riskmonitor.entity.Team;
 import com.riskmonitor.repository.RiskRepository;
 import com.riskmonitor.repository.RiskValueRepository;
+import com.riskmonitor.repository.TeamMemberRepository;
+import com.riskmonitor.repository.TeamRepository;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Proxy;
@@ -30,7 +33,9 @@ class RiskValueServiceTests {
 
         UUID riskId = UUID.randomUUID();
         Instant validFrom = Instant.parse("2026-05-21T09:00:00Z");
+        Team team = new Team("Test team", "RM-TEST1", "google-user-1");
         Risk risk = new Risk(
+                team,
                 "google-user-1",
                 "Test risk",
                 "Operational",
@@ -72,8 +77,27 @@ class RiskValueServiceTests {
                     throw new UnsupportedOperationException(method.getName());
                 }
         );
+        TeamRepository teamRepository = repositoryProxy(
+                TeamRepository.class,
+                (proxy, method, args) -> {
+                    if (method.getName().equals("existsById")) {
+                        return true;
+                    }
+                    throw new UnsupportedOperationException(method.getName());
+                }
+        );
+        TeamMemberRepository teamMemberRepository = repositoryProxy(
+                TeamMemberRepository.class,
+                (proxy, method, args) -> {
+                    if (method.getName().equals("existsByTeamIdAndUserId")) {
+                        return true;
+                    }
+                    throw new UnsupportedOperationException(method.getName());
+                }
+        );
+        TeamService teamService = new TeamService(teamRepository, teamMemberRepository);
 
-        RiskValueService riskValueService = new RiskValueService(riskValueRepository, riskRepository);
+        RiskValueService riskValueService = new RiskValueService(riskValueRepository, riskRepository, teamService);
         List<RiskValue> saved = riskValueService.createValues(
                 riskId,
                 "google-user-1",

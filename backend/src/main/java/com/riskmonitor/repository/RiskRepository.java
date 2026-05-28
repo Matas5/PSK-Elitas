@@ -13,4 +13,6 @@ public interface RiskRepository extends JpaRepository<Risk, UUID> {
     Optional<Risk> findByIdAndUserId(UUID id, String userId);
 
     List<Risk> findAllByUserId(String userId, Sort sort);
+
+    List<Risk> findAllByTeamId(UUID teamId, Sort sort);
 }

@@ -13,6 +13,7 @@ import theme from './theme';
 import { AuthProvider } from './auth/AuthContext.jsx';
 import { NotificationProvider } from './context/NotificationContext.jsx';
 import { LocaleProvider, useLocale } from './context/LocaleContext.jsx';
+import { TeamProvider } from './context/TeamContext.jsx';
 
 function LocalizedDateProvider({ children }) {
   const { locale } = useLocale();
@@ -32,7 +33,9 @@ createRoot(document.getElementById('root')).render(
           <LocalizedDateProvider>
             <AuthProvider>
               <NotificationProvider>
-                <App />
+                <TeamProvider>
+                  <App />
+                </TeamProvider>
               </NotificationProvider>
             </AuthProvider>
           </LocalizedDateProvider>

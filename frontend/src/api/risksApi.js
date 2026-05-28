@@ -38,8 +38,12 @@ function authHeaders() {
     return headers;
 }
 
-export async function listRisks() {
-    const response = await fetch("/api/risks", {
+export async function listRisks(teamId) {
+    if (!teamId) {
+        throw new Error("No active team selected");
+    }
+
+    const response = await fetch(`/api/risks?teamId=${encodeURIComponent(teamId)}`, {
         headers: authHeaders()
     });
 

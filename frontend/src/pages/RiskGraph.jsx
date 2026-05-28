@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link as RouterLink, useParams, useSearchParams } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -39,6 +40,7 @@ import {
   needsSeconds,
 } from '../constants/risk';
 import { useLocale } from '../context/LocaleContext.jsx';
+import { useTeam } from '../context/TeamContext';
 import { ROUTES } from '../routes';
 
 const PICKER_VIEWS_WITH_SECONDS = ['year', 'month', 'day', 'hours', 'minutes', 'seconds'];
@@ -175,11 +177,12 @@ function downloadSvgAsPng(container, filename) {
 
 export default function RiskGraph() {
   const { locale } = useLocale();
+  const { activeTeam } = useTeam();
   const { riskId: routeRiskId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const [selectedRiskId, setSelectedRiskId] = useState(routeRiskId || searchParams.get('riskId') || '');
   const [risks, setRisks] = useState([]);
-  const [risksLoading, setRisksLoading] = useState(true);
+  const [risksLoading, setRisksLoading] = useState(false);
   const [risksError, setRisksError] = useState(null);
   const [risk, setRisk] = useState(null);
   const [values, setValues] = useState([]);
@@ -188,46 +191,63 @@ export default function RiskGraph() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
   const chartRef = useRef(null);
+  const activeTeamId = activeTeam?.id || '';
+  const selectedRisk = useMemo(
+    () => risks.find((item) => item.id === selectedRiskId) || null,
+    [risks, selectedRiskId],
+  );
 
-  const loadRiskList = async () => {
+  const loadRiskList = useCallback(async () => {
+    if (!activeTeamId) {
+      setRisks([]);
+      setRisksLoading(false);
+      setRisksError(null);
+      return;
+    }
+
     setRisksLoading(true);
     setRisksError(null);
+    setRisks([]);
 
     try {
-      const data = await listRisks();
+      const data = await listRisks(activeTeamId);
       setRisks(data);
     } catch (err) {
       setRisksError(err.message || 'Failed to load risks.');
     } finally {
       setRisksLoading(false);
     }
-  };
+  }, [activeTeamId]);
 
   useEffect(() => {
-    let active = true;
-
-    listRisks()
-      .then((data) => {
-        if (active) setRisks(data);
-      })
-      .catch((err) => {
-        if (active) setRisksError(err.message || 'Failed to load risks.');
-      })
-      .finally(() => {
-        if (active) setRisksLoading(false);
-      });
-
-    return () => { active = false; };
-  }, []);
+    loadRiskList();
+  }, [loadRiskList]);
 
   useEffect(() => {
-    if (!selectedRiskId) {
+    if (risksLoading || risksError || !selectedRiskId || !activeTeamId) return;
+    if (!risks.some((item) => item.id === selectedRiskId)) {
+      setSelectedRiskId('');
+      setRisk(null);
+      setValues([]);
+      setLoadError(null);
+      setLoading(false);
+      setSearchParams({}, { replace: true });
+    }
+  }, [activeTeamId, risks, risksError, risksLoading, selectedRiskId, setSearchParams]);
+
+  useEffect(() => {
+    if (!selectedRisk) {
+      setRisk(null);
+      setValues([]);
+      setLoading(false);
       return undefined;
     }
 
     let active = true;
+    setLoading(true);
+    setLoadError(null);
 
-    Promise.all([getRisk(selectedRiskId), listAllRiskValues(selectedRiskId)])
+    Promise.all([getRisk(selectedRisk.id), listAllRiskValues(selectedRisk.id)])
       .then(([riskData, valueData]) => {
         if (!active) return;
         setRisk(riskData);
@@ -238,10 +258,10 @@ export default function RiskGraph() {
       })
       .finally(() => {
         if (active) setLoading(false);
-      });
+    });
 
     return () => { active = false; };
-  }, [selectedRiskId]);
+  }, [selectedRisk]);
 
   const handleRiskChange = (event) => {
     const nextRiskId = event.target.value;
@@ -305,14 +325,19 @@ export default function RiskGraph() {
         <Box>
           <Typography variant="h1" gutterBottom>Risk Graphs</Typography>
           <Typography variant="body2" color="text.secondary">
-            Select a risk to view its logged values as a threshold-aware graph.
+            Select a risk in the active team to view its logged values as a threshold-aware graph.
           </Typography>
         </Box>
       </Stack>
 
       <Paper sx={{ p: 2.5, mb: 3 }}>
+        {!activeTeam && (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            Select a team before viewing risk graphs.
+          </Alert>
+        )}
         <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
-          <FormControl fullWidth disabled={risksLoading}>
+          <FormControl fullWidth disabled={!activeTeam || risksLoading}>
             <InputLabel id="risk-graphs-risk-label">Risk</InputLabel>
             <Select
               labelId="risk-graphs-risk-label"
@@ -337,19 +362,19 @@ export default function RiskGraph() {
           </FormControl>
           <MuiTooltip title="Refresh risks">
             <span>
-              <IconButton onClick={loadRiskList} disabled={risksLoading} size="small">
+              <IconButton onClick={loadRiskList} disabled={!activeTeam || risksLoading} size="small">
                 <RefreshIcon fontSize="small" />
               </IconButton>
             </span>
           </MuiTooltip>
         </Stack>
-        {risksLoading && (
+        {activeTeam && risksLoading && (
           <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mt: 2 }}>
             <CircularProgress size={20} />
             <Typography variant="body2" color="text.secondary">Loading risks...</Typography>
           </Stack>
         )}
-        {!risksLoading && risksError && (
+        {activeTeam && !risksLoading && risksError && (
           <Alert
             severity="error"
             sx={{ mt: 2 }}
@@ -364,7 +389,7 @@ export default function RiskGraph() {
         )}
       </Paper>
 
-      {!selectedRiskId && (
+      {activeTeam && !selectedRiskId && (
         <Paper sx={{ p: 4 }}>
           <Typography variant="h3" gutterBottom>Select a risk to view its graph</Typography>
           <Typography variant="body2" color="text.secondary">
@@ -373,15 +398,15 @@ export default function RiskGraph() {
         </Paper>
       )}
 
-      {selectedRiskId && loading && (
+      {activeTeam && selectedRisk && loading && (
         <Paper sx={{ p: 4, display: 'flex', justifyContent: 'center' }}>
           <CircularProgress size={32} />
         </Paper>
       )}
 
-      {selectedRiskId && !loading && loadError && <Alert severity="error">{loadError}</Alert>}
+      {activeTeam && selectedRisk && !loading && loadError && <Alert severity="error">{loadError}</Alert>}
 
-      {selectedRiskId && !loading && !loadError && risk && (
+      {activeTeam && selectedRisk && !loading && !loadError && risk && (
         <>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}

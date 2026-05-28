@@ -75,6 +75,7 @@ export default function RiskDetailsDialog({
   onDelete,
   onAddValue,
   onViewGraph,
+  canDeleteRisk = false,
   deleting = false,
   deleteError = null,
 }) {
@@ -162,14 +163,16 @@ export default function RiskDetailsDialog({
         <Button startIcon={<EditOutlinedIcon />} onClick={onEdit} disabled={deleting}>
           Edit
         </Button>
-        <Button
-          color="error"
-          startIcon={<DeleteOutlineIcon />}
-          onClick={onDelete}
-          disabled={deleting}
-        >
-          Delete
-        </Button>
+        {canDeleteRisk && (
+          <Button
+            color="error"
+            startIcon={<DeleteOutlineIcon />}
+            onClick={onDelete}
+            disabled={deleting}
+          >
+            Delete
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );

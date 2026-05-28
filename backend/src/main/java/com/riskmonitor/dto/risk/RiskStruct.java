@@ -22,6 +22,9 @@ public final class RiskStruct {
     }
 
     public record RiskCreateReq(
+            @NotNull
+            UUID teamId,
+
             @NotBlank @Size(min = 3, max = 100)
             String name,
 
@@ -98,6 +101,7 @@ public final class RiskStruct {
 
     public record RiskResp(
             UUID id,
+            UUID teamId,
             String name,
             String category,
             String description,
@@ -120,6 +124,7 @@ public final class RiskStruct {
             var modifyDetails = risk.getModifyDetails();
             return new RiskResp(
                     risk.getId(),
+                    risk.getTeam() == null ? null : risk.getTeam().getId(),
                     risk.getName(),
                     risk.getCategory(),
                     risk.getDescription(),
