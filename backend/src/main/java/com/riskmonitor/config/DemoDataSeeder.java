@@ -47,7 +47,7 @@ public class DemoDataSeeder implements CommandLineRunner {
 
         String demoUserId = demoUser.getId().toString();
 
-        if (!riskRepo.findAllByGoogleUserId(demoUserId, Sort.unsorted()).isEmpty()) {
+        if (!riskRepo.findAllByUserId(demoUserId, Sort.unsorted()).isEmpty()) {
             log.info("Demo data already present for user {}, skipping seed", demoUserId);
             return;
         }

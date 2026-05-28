@@ -32,10 +32,10 @@ public class BackendApplication {
 ```java
 @Async
 @Transactional(readOnly = true)
-public CompletableFuture<List<RiskResp>> listRisks(String googleUserId) {
+public CompletableFuture<List<RiskResp>> listRisks(String userId) {
     log.info("listRisks executing asynchronously on thread {}", Thread.currentThread().getName());
     List<RiskResp> result = riskRepository
-            .findAllByGoogleUserId(googleUserId, Sort.by(Sort.Direction.ASC, "name"))
+            .findAllByUserId(userId, Sort.by(Sort.Direction.ASC, "name"))
             .stream()
             .map(RiskResp::from)
             .toList();

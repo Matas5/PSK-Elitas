@@ -54,7 +54,7 @@ class RiskValueServiceTests {
                     if (method.getName().equals("findById")) {
                         return Optional.of(risk);
                     }
-                    if (method.getName().equals("findByIdAndGoogleUserId")) {
+                    if (method.getName().equals("findByIdAndUserId")) {
                         return Optional.of(risk);
                     }
                     throw new UnsupportedOperationException(method.getName());

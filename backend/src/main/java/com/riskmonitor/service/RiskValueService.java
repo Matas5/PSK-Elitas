@@ -83,7 +83,7 @@ public class RiskValueService {
     }
 
     private Risk getRiskForUser(UUID riskId, String userId) {
-        return riskRepository.findByIdAndGoogleUserId(riskId, userId)
+        return riskRepository.findByIdAndUserId(riskId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Risk not found: " + riskId));
     }
 

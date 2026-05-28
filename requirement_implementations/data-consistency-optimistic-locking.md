@@ -34,7 +34,7 @@ private Long version;
 **File:** [backend/src/main/java/com/riskmonitor/service/RiskService.java](backend/src/main/java/com/riskmonitor/service/RiskService.java)
 
 ```java
-public RiskResp updateRisk(UUID id, RiskUpdateReq req, String googleUserId) {
+public RiskResp updateRisk(UUID id, RiskUpdateReq req, String userId) {
     Risk risk = riskRepository.findById(id).orElseThrow();
     
     // Check if version matches

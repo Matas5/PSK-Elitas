@@ -29,17 +29,17 @@ public class RiskService {
 
     // for testing, use dto to avoid sending unnecessary fields
     @Transactional(readOnly = true)
-    public Risk getRisk(UUID id, String googleUserId) {
-        return riskRepository.findByIdAndGoogleUserId(id, googleUserId)
+    public Risk getRisk(UUID id, String userId) {
+        return riskRepository.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new IllegalArgumentException("Risk not found: " + id));
     }
 
     @Async
     @Transactional(readOnly = true)
-    public CompletableFuture<List<RiskResp>> listRisks(String googleUserId) {
+    public CompletableFuture<List<RiskResp>> listRisks(String userId) {
         log.info("listRisks executing asynchronously on thread {}", Thread.currentThread().getName());
         List<RiskResp> result = riskRepository
-                .findAllByGoogleUserId(googleUserId, Sort.by(Sort.Direction.ASC, "name"))
+                .findAllByUserId(userId, Sort.by(Sort.Direction.ASC, "name"))
                 .stream()
                 .map(RiskResp::from)
                 .toList();
@@ -47,7 +47,7 @@ public class RiskService {
     }
 
     @Transactional
-    public Risk createRisk(RiskCreateReq req, String googleUserId) {
+    public Risk createRisk(RiskCreateReq req, String userId) {
         validateSelectedBounds(
                 req.hasUpperBounds(),
                 req.hasLowerBounds(),
@@ -71,7 +71,7 @@ public class RiskService {
         BigDecimal upperMax = req.hasUpperBounds() ? req.upperMaxThreshold() : null;
 
         Risk risk = new Risk(
-                googleUserId,
+                userId,
                 req.name().trim(),
                 req.category().trim(),
                 req.description(),
@@ -90,7 +90,7 @@ public class RiskService {
     }
 
     @Transactional
-    public Risk updateRisk(UUID id, RiskUpdateReq req, String googleUserId) {
+    public Risk updateRisk(UUID id, RiskUpdateReq req, String userId) {
         validateSelectedBounds(
                 req.hasUpperBounds(),
                 req.hasLowerBounds(),
@@ -113,7 +113,7 @@ public class RiskService {
         BigDecimal upperMedium = req.hasUpperBounds() ? req.upperMidThreshold() : null;
         BigDecimal upperMax = req.hasUpperBounds() ? req.upperMaxThreshold() : null;
 
-        Risk risk = getRisk(id, googleUserId);
+        Risk risk = getRisk(id, userId);
         
         // Optimistic locking: check version match
         if (!risk.getVersion().equals(req.version())) {
@@ -144,8 +144,8 @@ public class RiskService {
     }
 
     @Transactional
-    public void deleteRisk(UUID id, String googleUserId) {
-        Risk risk = getRisk(id, googleUserId);
+    public void deleteRisk(UUID id, String userId) {
+        Risk risk = getRisk(id, userId);
         riskRepository.delete(risk);
     }
 
