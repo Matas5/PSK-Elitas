@@ -1,7 +1,4 @@
-# keep shell scripts + the maven wrapper LF so they run in the Linux dev container,
-# even when the repo is checked out on Windows.
 *.sh   text eol=lf
 mvnw   text eol=lf
-# windows wrappers stay CRLF
 *.cmd  text eol=crlf
 *.bat  text eol=crlf
