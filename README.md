@@ -2,7 +2,7 @@
   <img src="frontend/public/favicon.svg" alt="Risk monitoring system" width="120" />
 </p>
 
-<h1 align="center">Risk monitoring system</h1>
+<h1 align="center">Risk Monitoring System</h1>
 <h2 align="center"><b>Bare-bones risk category, value, graphing rish detection system (+with color-coding)! </b></h2>
 
 # Getting started 
