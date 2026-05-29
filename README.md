@@ -99,3 +99,6 @@ First time: wipe stale build output, reinstall, recompile, launch:
 nix-shell --run fresh 
 nix-shell --run start
 ```
+
+## P.S 
+`/docs` turi daugiau info apie kokybiniu reikalvimu igyvendinimus (destytojau, sitas jums <3 )

@@ -169,7 +169,7 @@ export default function CreateRiskDialog({ risk = null, teamId = '', onClose, on
     const name = form.name.trim();
     if (!name) next.name = 'Name is required.';
     else if (name.length < NAME_MIN || name.length > NAME_MAX) {
-      next.name = `Name must be ${NAME_MIN}–${NAME_MAX} characters.`;
+      next.name = `Name must be ${NAME_MIN}-${NAME_MAX} characters.`;
     }
 
     const category = form.category.trim();
@@ -299,7 +299,7 @@ export default function CreateRiskDialog({ risk = null, teamId = '', onClose, on
       }
       onClose();
     } catch (err) {
-      // Check for optimistic locking conflict (HTTP 409)
+      // optimistic-lock conflict (409): show the resolver dialog
       if (err.status === 409 && err.data?.currentData) {
         setConflictData(err.data);
         return;
@@ -316,7 +316,7 @@ export default function CreateRiskDialog({ risk = null, teamId = '', onClose, on
   };
 
   const handleConflictReload = () => {
-    // Reload from the server version
+    // reload: take the server's copy
     const serverRisk = conflictData.currentData;
     setForm(riskToForm(serverRisk));
     setConflictData(null);
@@ -324,12 +324,11 @@ export default function CreateRiskDialog({ risk = null, teamId = '', onClose, on
   };
 
   const handleConflictOverwrite = async () => {
-    // Update version to server's version and retry
+    // overwrite: adopt the server version, then resubmit
     setForm((prev) => ({ ...prev, version: conflictData.currentVersion }));
     setConflictData(null);
-    
-    // Retry the submit after updating the version
-    // We need to trigger a submit with the new version
+
+    // resubmit on the next tick, once the version state has applied
     setTimeout(() => {
       const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
       document.querySelector('form')?.dispatchEvent(submitEvent);
@@ -394,7 +393,7 @@ export default function CreateRiskDialog({ risk = null, teamId = '', onClose, on
                 value={form.timeIntervalValue}
                 onChange={update('timeIntervalValue')}
                 error={Boolean(errors.timeIntervalValue)}
-                helperText={errors.timeIntervalValue || `${INTERVAL_MIN}–${INTERVAL_MAX}`}
+                helperText={errors.timeIntervalValue || `${INTERVAL_MIN}-${INTERVAL_MAX}`}
                 inputProps={{ min: INTERVAL_MIN, max: INTERVAL_MAX, step: 1 }}
                 sx={{ flex: 1 }}
               />
@@ -564,7 +563,7 @@ export default function CreateRiskDialog({ risk = null, teamId = '', onClose, on
         <Button onClick={handleClose} disabled={submitting}>Cancel</Button>
         <Button type="submit" variant="contained" disabled={submitting}>
           {submitting
-            ? `${isEdit ? 'Saving' : 'Creating'}…`
+            ? `${isEdit ? 'Saving' : 'Creating'}...`
             : `${isEdit ? 'Save changes' : 'Create risk'}`}
         </Button>
       </DialogActions>

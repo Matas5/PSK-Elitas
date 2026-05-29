@@ -15,20 +15,14 @@ import com.riskmonitor.exception.OptimisticLockingConflictException;
 
 import lombok.RequiredArgsConstructor;
 
-/**
- * Global exception handler for REST controllers.
- * Handles optimistic locking conflicts and other common exceptions.
- */
+// maps domain + JPA exceptions to HTTP responses for every controller
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class GlobalExceptionHandler {
 
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    /**
-     * Handle optimistic locking failures when multiple users try to update the same resource.
-     * Returns 409 Conflict with the current version of the data.
-     */
+    // version check failed: return 409 with the current server copy so the client can reload or overwrite
     @ExceptionHandler(OptimisticLockingConflictException.class)
     public ResponseEntity<ConflictResponse<?>> handleOptimisticLockingFailure(
             OptimisticLockingConflictException ex
@@ -37,7 +31,7 @@ public class GlobalExceptionHandler {
 
         ConflictResponse<?> response = ConflictResponse.of(
                 ex.getResourceId(),
-                null, // Client version is not known to exception handler
+                null,
                 ex.getCurrentVersion(),
                 ex.getCurrentData()
         );
@@ -45,11 +39,8 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
     }
 
-    /**
-     * Handle the JPA/Hibernate flush-time optimistic lock failure. This is the real safety net:
-     * if two truly concurrent updates slip past the explicit version checks, the @Version bump
-     * fails at flush and we still answer 409 (reload) instead of letting it become a 500.
-     */
+    // flush-time JPA lock failure: the safety net if a true concurrent race slips past the explicit
+    // version check, so the @Version bump failing at flush still answers 409 (reload), not 500.
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
     public ResponseEntity<ConflictResponse<?>> handleJpaOptimisticLock(
             ObjectOptimisticLockingFailureException ex
@@ -61,9 +52,7 @@ public class GlobalExceptionHandler {
                 "CONFLICT_VERSION_MISMATCH", id, null, null, null));
     }
 
-    /**
-     * Handle generic IllegalArgumentException
-     */
+    // bad input -> 400
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ErrorResponse> handleIllegalArgument(IllegalArgumentException ex) {
         log.warn("Validation error: {}", ex.getMessage());

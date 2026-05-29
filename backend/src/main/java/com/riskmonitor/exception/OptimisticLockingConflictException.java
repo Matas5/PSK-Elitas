@@ -2,10 +2,7 @@ package com.riskmonitor.exception;
 
 import java.util.UUID;
 
-/**
- * Exception thrown when optimistic locking conflict is detected.
- * Contains the current version and data from the server.
- */
+// thrown on a version mismatch; carries the current server version + data for the 409 response
 public class OptimisticLockingConflictException extends RuntimeException {
     private final UUID resourceId;
     private final Long currentVersion;

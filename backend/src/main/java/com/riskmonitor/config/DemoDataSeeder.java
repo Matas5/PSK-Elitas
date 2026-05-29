@@ -117,11 +117,11 @@ public class DemoDataSeeder implements CommandLineRunner {
                         null, null, new BigDecimal("3.0000"), new BigDecimal("10.0000"),
                         validFrom, null)
         ), new int[][] {
-                {0, 1, 2, 2, 1, 2, 2, 1, 2, 2, 0, 2, 2, 2, 0}, // population density
-                {0, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 0, 0}, // api latency
-                {1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1}, // supplier delay
-                {0, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2}, // monthly budget burn
-                {0, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1}, // security incidents
+                {0, 1, 2, 2, 1, 2, 2, 1, 2, 2, 0, 2, 2, 2, 0},
+                {0, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 0, 0},
+                {1, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1},
+                {0, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2},
+                {0, 1, 1, 1, 1, 1, 1, 2, 1, 1, 1, 1, 1, 1, 1},
         });
 
         // a second shared team
@@ -243,9 +243,9 @@ public class DemoDataSeeder implements CommandLineRunner {
         BigDecimal upperMid = risk.getUpperMidThreshold();
         BigDecimal upperMax = risk.getUpperMaxThreshold();
         BigDecimal value = switch (severity) {
-            case 2 -> upperMax.multiply(new BigDecimal("1.10")); // above max, lands HIGH
-            case 1 -> upperMid.add(upperMax).divide(BigDecimal.valueOf(2)); // mid band, MEDIUM
-            default -> upperMid.multiply(new BigDecimal("0.50")); // under mid, LOW
+            case 2 -> upperMax.multiply(new BigDecimal("1.10"));
+            case 1 -> upperMid.add(upperMax).divide(BigDecimal.valueOf(2));
+            default -> upperMid.multiply(new BigDecimal("0.50"));
         };
         return value.setScale(4, RoundingMode.HALF_UP);
     }

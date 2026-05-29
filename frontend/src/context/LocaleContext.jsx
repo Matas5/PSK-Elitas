@@ -1,10 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
-/*
-* Localization for date format.
-* It's toggle instead of dropdown right now for verification
-*
-*/
+// date-format locale (lt/en), persisted to localStorage. a toggle for now, not a dropdown.
 
 const STORAGE_KEY = 'app_locale';
 const SUPPORTED = ['lt', 'en'];
@@ -21,9 +17,6 @@ function readStoredLocale() {
   }
 }
 
-/*
-*
-*/
 export function LocaleProvider({ children }) {
   const [locale, setLocaleState] = useState(() => readStoredLocale());
 
@@ -44,7 +37,6 @@ export function LocaleProvider({ children }) {
   return <LocaleContext.Provider value={value}>{children}</LocaleContext.Provider>;
 }
 
-// Context
 export function useLocale() {
   const context = useContext(LocaleContext);
   if (!context) {

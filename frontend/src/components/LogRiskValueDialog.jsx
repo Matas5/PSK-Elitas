@@ -203,7 +203,7 @@ export default function LogRiskValueDialog({ risk, onClose, onCreated }) {
       <DialogActions sx={{ px: 3, py: 2 }}>
         <Button onClick={handleClose} disabled={submitting}>Cancel</Button>
         <Button type="submit" variant="contained" disabled={submitting}>
-          {submitting ? 'Saving…' : 'Save value'}
+          {submitting ? 'Saving...' : 'Save value'}
         </Button>
       </DialogActions>
     </Dialog>
