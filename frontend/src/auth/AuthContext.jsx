@@ -1,6 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useRef, useMemo, useState } from 'react';
 
+import { registerProfile } from '../api/usersApi';
+
 const STORAGE_KEY = 'auth_user';
 
 const AuthContext = createContext(null);
@@ -59,6 +61,16 @@ export function AuthProvider({ children }) {
       setJustLoggedIn(true);
     }
     prevUserRef.current = user;
+  }, [user]);
+
+  // register the user's name/email so team member lists show it instead of a raw id
+  // (mainly for google users, who have no backend account). fire-and-forget.
+  useEffect(() => {
+    if (!user?.userId) return;
+    registerProfile({
+      displayName: user.displayName || user.username || '',
+      email: user.email || '',
+    }).catch(() => {});
   }, [user]);
 
   const login = useCallback((nextUser) => {
