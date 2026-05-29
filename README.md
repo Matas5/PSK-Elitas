@@ -3,11 +3,9 @@
 </p>
 
 <h1 align="center">Risk monitoring system</h1>
+<h2 align="center"><b>Bare-bones risk category, value, graphing rish detection system (+with color-coding)! </b></h2>
 
-**Bare-bones risk category, value, graphing rish detection system (+with color-coding)!**
-
-
-# How to launch, gotchas
+# Getting started 
 
 
 ## Launch with VS Code (Dev Container)
