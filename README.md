@@ -29,17 +29,24 @@ sign-in will not. `.env` is gitignored, so it never ships in the repo; get the s
 
 ## Launch with VS Code (Dev Container)
 
-1. Open the project folder in VS Code.
-2. Run **"Dev Containers: Reopen in Container"** 
-3. In the VS Code terminal run the launcher:
+Cross-platform, no Java/Node needed on the host. You need: Docker Desktop, VS Code, and the **Dev Containers** extension.
+
+1. Start Docker Desktop (wait until it says the engine is running).
+2. Open the project folder in VS Code.
+3. `Ctrl+Shift+P` -> **"Dev Containers: Reopen in Container"**. First build pulls the image and installs deps, give it a few minutes.
+4. Open a terminal in the container (`` Ctrl+` ``) and launch everything:
 
    ```bash
    bash .devcontainer/launch.sh
    ```
 
-   It starts Postgres, backend, auth server and frontend together (Ctrl-C stops all). When
-   VS Code says port 5173 is forwarded, open **http://localhost:5173** and log in with
-   `demo` / `demo1234`.
+   Brings up Postgres, backend, auth server and frontend together. `Ctrl-C` stops all.
+5. When VS Code says port 5173 is forwarded, open **http://localhost:5173** and log in `demo` / `demo1234`.
+
+Gotchas:
+- launch.sh errors with `$'\r'` or `no such service: postgres\r`? Your checkout has Windows line endings. Fix once: `sed -i 's/\r$//' .devcontainer/launch.sh` then rerun. (Fresh clones are fine, `.gitattributes` forces LF.)
+- Auth server crashes with `OAuth2Strategy requires a clientID`? That is just the missing `.env` (Google creds). Local `demo` login still works.
+- Build dies on disk space or an expired yarn apt key? Free space in Docker Desktop (`docker system prune -a`) and rebuild without cache.
 
 ---
 
