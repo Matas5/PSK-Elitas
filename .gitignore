@@ -43,3 +43,4 @@ shell.nix
 
 # Local-only deliverable drafts
 requirement_implementations/product-conception-diagram.html
+requirement_implementations/wire-frames/

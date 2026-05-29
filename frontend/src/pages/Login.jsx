@@ -5,7 +5,6 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
-import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -193,13 +192,15 @@ export default function Login() {
             <Typography variant="body2" color="text.secondary">
               Or sign in with
             </Typography>
-            <IconButton
+            <Button
+              variant="outlined"
               size="small"
               onClick={() => setShowGoogle(true)}
               aria-label="Sign in with Google"
+              startIcon={<GoogleColorIcon size={18} />}
             >
-              <GoogleColorIcon size={20} />
-            </IconButton>
+              Google
+            </Button>
           </Box>
         )}
       </Stack>

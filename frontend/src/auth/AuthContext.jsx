@@ -14,6 +14,18 @@ function readStoredUser() {
   }
 }
 
+// keep localStorage in lockstep with the user *synchronously*. the api helpers
+// read auth_user straight from localStorage, and react runs child effects
+// (TeamContext's load) before this provider's effects, so a post-render effect
+// would let those fetches see a stale/empty user when swapping logins.
+function persistUser(nextUser) {
+  if (nextUser) {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));
+  } else {
+    window.localStorage.removeItem(STORAGE_KEY);
+  }
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => readStoredUser());
   const [loading, setLoading] = useState(true);
@@ -28,7 +40,9 @@ export function AuthProvider({ children }) {
         if (response.ok) {
           const data = await response.json();
           if (data.user) {
-            setUser({ ...data.user, provider: 'google' });
+            const googleUser = { ...data.user, provider: 'google' };
+            persistUser(googleUser);
+            setUser(googleUser);
           }
         }
       } catch (error) {
@@ -49,16 +63,14 @@ export function AuthProvider({ children }) {
     prevUserRef.current = user;
   }, [user]);
 
-  useEffect(() => {
-    if (user) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    } else {
-      window.localStorage.removeItem(STORAGE_KEY);
-    }
-  }, [user]);
-
-  const login = useCallback((nextUser) => setUser(nextUser), []);
-  const logout = useCallback(() => setUser(null), []);
+  const login = useCallback((nextUser) => {
+    persistUser(nextUser);
+    setUser(nextUser);
+  }, []);
+  const logout = useCallback(() => {
+    persistUser(null);
+    setUser(null);
+  }, []);
   const clearJustLoggedIn = useCallback(() => setJustLoggedIn(false), []);
 
   const value = useMemo(
