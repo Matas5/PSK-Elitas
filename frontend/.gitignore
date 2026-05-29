@@ -11,6 +11,8 @@ node_modules
 dist
 dist-ssr
 *.local
+# .env.local here is just localhost API URLs (not secret) so it ships with the repo
+!.env.local
 
 # Editor directories and files
 .vscode/*

@@ -79,10 +79,11 @@ export function formatDirection(risk) {
   return '-';
 }
 
+// `shape` pairs with `color` so the indicator reads without colour alone: circle/square/triangle
 export const RISK_LEVELS = Object.freeze({
-  LOW: { label: 'Low', color: '#2e7d32' },
-  MEDIUM: { label: 'Medium', color: '#ed6c02' },
-  HIGH: { label: 'High', color: '#d32f2f' },
+  LOW: { label: 'Low', color: '#2e7d32', shape: 'circle', colorName: 'Green' },
+  MEDIUM: { label: 'Medium', color: '#f59e0b', shape: 'square', colorName: 'Yellow' },
+  HIGH: { label: 'High', color: '#dc2626', shape: 'triangle', colorName: 'Red' },
 });
 
 export function classifyRiskLevel(risk, value) {

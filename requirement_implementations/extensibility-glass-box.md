@@ -1,153 +1,138 @@
 # Extensibility / Glass-box Extensibility
 
-Requirement: Swap and or decorate code without modifying or recompiling the existing code. Done via **Strategy** (CDI Alternatives / `@Specializes`) or **Decorator** (CDI Decorators), but in Spring it's done with `@Primary` and `@Profile` selecting between sibling beans to accomplish the same pattern.
+Requirement: After the system is built you should be able to swap a business algorithm for a different version (**Strategy**) or wrap it (**Decorator**) without touching or recompiling the old code. You only add new code, and maybe edit a config file. (CDI versions: Strategy = CDI Alternatives / `@Specializes`, Decorator = CDI Decorators.)
+
+We went with Strategy. The algorithm you can swap is how the risk list gets ranked and coloured. There are two versions, and which one runs is picked from a config value (and can even be flipped live without a restart).
 
 ---
 
-## Strategy Interface
+## Example 1: the interface you swap
 
-**File:** [backend/src/main/java/com/riskmonitor/service/auth/AuthenticationStrategy.java](backend/src/main/java/com/riskmonitor/service/auth/AuthenticationStrategy.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/ranking/RiskSortStrategy.java](backend/src/main/java/com/riskmonitor/service/ranking/RiskSortStrategy.java)
+
+**How it works:** every variant implements this. It ranks the risks and tags each with a level. Callers only ever see the interface, never a concrete class.
 
 ```java
-public interface AuthenticationStrategy {
-
-    String resolveUserId(HttpServletRequest request);
+public interface RiskSortStrategy {
+    List<RankedRisk> rank(List<Risk> risks);   // ordered, each paired with its level
 }
 ```
 
-**How it works:** A single seam - every place that needs the current user ID depends on this interface, never on a concrete implementation.
-
 ---
 
-## Default Implementation
+## Example 2: variant by HIGH-reading count (default)
 
-### Header strategy (active by default)
-**File:** [backend/src/main/java/com/riskmonitor/service/auth/HeaderUserIdAuthenticationStrategy.java](backend/src/main/java/com/riskmonitor/service/auth/HeaderUserIdAuthenticationStrategy.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/ranking/HighRiskCountSortStrategy.java](backend/src/main/java/com/riskmonitor/service/ranking/HighRiskCountSortStrategy.java)
+
+**How it works:** counts each risk's HIGH readings, worst on top, and buckets that count into a level. Registered as the bean `highCount`.
 
 ```java
-@Service
-public class HeaderUserIdAuthenticationStrategy implements AuthenticationStrategy {
-
-    @Override
-    public String resolveUserId(HttpServletRequest request) {
-        String userId = request.getHeader("X-User-Id");
-        if (userId == null || userId.isBlank()) {
-            throw new IllegalArgumentException("Missing X-User-Id header");
-        }
-        return userId;
+@Component("highCount")
+public class HighRiskCountSortStrategy implements RiskSortStrategy {
+    public List<RankedRisk> rank(List<Risk> risks) {
+        return risks.stream()
+                .map(r -> new Scored(r, countHighReadings(r)))
+                .sorted(...)                                          // by count desc, name breaks ties
+                .map(s -> new RankedRisk(s.risk(), levelFor(s.highCount())))
+                .toList();
     }
 }
 ```
 
-**How it works:** Standalone `@Service`. Selected when no other strategy is marked `@Primary` for the active profile.
-
 ---
 
-## Alternative / Decorating Implementation
+## Example 3: variant by average severity
 
-### Local-session strategy - `@Primary` + `@Profile("local")`
-**File:** [backend/src/main/java/com/riskmonitor/service/auth/LocalSessionAuthenticationStrategy.java](backend/src/main/java/com/riskmonitor/service/auth/LocalSessionAuthenticationStrategy.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/ranking/AverageSeveritySortStrategy.java](backend/src/main/java/com/riskmonitor/service/ranking/AverageSeveritySortStrategy.java)
+
+**How it works:** same shape, but ranks on the mean severity of each risk's readings. The whole second algorithm is just one more `@Component`, nothing else changed.
 
 ```java
-@Service
-@Primary
-@Profile("local")
-public class LocalSessionAuthenticationStrategy
-        extends HeaderUserIdAuthenticationStrategy {
-
-    private final AppUserRepository userRepository;
-
-    public LocalSessionAuthenticationStrategy(AppUserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
-
-    @Override
-    public String resolveUserId(HttpServletRequest request) {
-        String header = request.getHeader("X-User-Id");
-        if (header == null || header.isBlank()) {
-            throw new IllegalArgumentException("Missing X-User-Id header");
-        }
-        UUID userId;
-        try {
-            userId = UUID.fromString(header.trim());
-        } catch (IllegalArgumentException ex) {
-            throw new IllegalArgumentException("Malformed X-User-Id header: not a UUID");
-        }
-        if (!userRepository.existsById(userId)) {
-            throw new IllegalArgumentException("Unknown local user: " + userId);
-        }
-        return userId.toString();
+@Component("average")
+public class AverageSeveritySortStrategy implements RiskSortStrategy {
+    public List<RankedRisk> rank(List<Risk> risks) {
+        return risks.stream()
+                .map(r -> new Scored(r, averageSeverity(r)))
+                .sorted(...)                                          // by mean desc, name breaks ties
+                .map(s -> new RankedRisk(s.risk(), levelFor(s.averageSeverity())))
+                .toList();
     }
 }
 ```
 
-**How it works:**
-
-- `@Profile("local")` - only registered when the `local` profile is active.
-- `@Primary` - when present, Spring picks this bean over the default header strategy for injection.
-- `extends HeaderUserIdAuthenticationStrategy` - demonstrates the **Decorator/Specialization** angle: new behavior is added by extending the existing strategy, not by editing it.
-
 ---
 
-## Consumer is Blind to the Concrete Strategy
+## Example 4: picking which one runs
 
-**File:** [backend/src/main/java/com/riskmonitor/web/CurrentUserIdArgumentResolver.java](backend/src/main/java/com/riskmonitor/web/CurrentUserIdArgumentResolver.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/ranking/RiskSortStrategySelector.java](backend/src/main/java/com/riskmonitor/service/ranking/RiskSortStrategySelector.java)
+
+**How it works:** Spring injects every strategy into a `Map` keyed by bean name; we read the active name from config and pull that one out. A new strategy shows up in the map on its own, so this class never changes. This is the Spring version of CDI Alternatives / `@Specializes`.
 
 ```java
 @Component
-@RequiredArgsConstructor
-public class CurrentUserIdArgumentResolver implements HandlerMethodArgumentResolver {
+public class RiskSortStrategySelector {
+    private final Map<String, RiskSortStrategy> strategies;   // injected: bean name -> strategy
+    private volatile String activeName;
 
-    private final AuthenticationStrategy authenticationStrategy;
-
-    @Override
-    public Object resolveArgument(MethodParameter parameter,
-                                  ModelAndViewContainer mavContainer,
-                                  NativeWebRequest webRequest,
-                                  WebDataBinderFactory binderFactory) {
-        HttpServletRequest request = webRequest.getNativeRequest(HttpServletRequest.class);
-        if (request == null) {
-            throw new IllegalStateException("No HttpServletRequest available");
-        }
-        return authenticationStrategy.resolveUserId(request);
+    public RiskSortStrategySelector(Map<String, RiskSortStrategy> strategies,
+            @Value("${riskmonitor.risk.sort-strategy:highCount}") String configured) {
+        this.strategies = strategies;
+        this.activeName = strategies.containsKey(configured) ? configured : "highCount";
     }
+    public RiskSortStrategy current() { return strategies.get(activeName); }
+    public void setActive(String name) { /* validates name */ this.activeName = name; }
 }
 ```
 
-**How it works:** Every controller method using `@CurrentUserId` is routed through this resolver. The resolver injects only the `AuthenticationStrategy` *interface* - Spring picks the right implementation based on the active profile. **No controller, service, or repository code knows which strategy is in use**, so adding a third strategy (e.g. `JwtAuthenticationStrategy`) only requires writing a new class - never editing the existing ones.
-
 ---
 
-## Configuration Switches the Algorithm
+## Example 5: the config file
 
 **File:** [backend/src/main/resources/application.properties](backend/src/main/resources/application.properties)
 
+**How it works:** sets which strategy is active at startup. Change it, restart, done. Maven copies the file but recompiles no Java.
+
 ```properties
-# SPECIALIZATION DEMO: COMMENT -> DEFAULT (HEADER) STRATEGY, UNCOMMENT -> LOCAL LOGIN
-spring.profiles.active=local
+riskmonitor.risk.sort-strategy=highCount   # or `average`
 ```
-
-**How it works:** Flipping a single line in config - **no recompile, no source edit** - swaps the entire authentication algorithm:
-
-- `spring.profiles.active=local` → `LocalSessionAuthenticationStrategy` (DB-backed UUID).
-- (commented out) → `HeaderUserIdAuthenticationStrategy` (raw `X-User-Id` header, used when authenticating via the Google OAuth flow).
 
 ---
 
-## Adding a Third Variant (Potential extension)
+## Example 6: who calls it
 
-To add e.g. a JWT-based strategy, the **only** change needed is a new file:
+**File:** [backend/src/main/java/com/riskmonitor/service/RiskService.java](backend/src/main/java/com/riskmonitor/service/RiskService.java)
+
+**How it works:** the service asks the selector for whatever's active and calls `rank()`. It has no idea which algorithm runs, so swapping needs zero changes here.
 
 ```java
-@Service
-@Primary
-@Profile("jwt")
-public class JwtAuthenticationStrategy implements AuthenticationStrategy {
-    @Override
-    public String resolveUserId(HttpServletRequest request) {
-        // decode bearer token, return subject
-    }
+List<RiskResp> result = sortStrategySelector.current()
+        .rank(risks)
+        .stream().map(r -> RiskResp.from(r.risk(), r.level())).toList();
+```
+
+---
+
+## Example 7: switching it live (extra, not required)
+
+**File:** [backend/src/main/java/com/riskmonitor/controller/RiskSortStrategyController.java](backend/src/main/java/com/riskmonitor/controller/RiskSortStrategyController.java)
+
+**How it works:** a PUT flips the active strategy at runtime, no restart. The Risks page wires this to a toggle, and each row shows the active strategy's level as a coloured shape.
+
+```java
+@PutMapping   // PUT /api/risks/strategy?name=average
+public StrategyResp set(@RequestParam String name) {
+    selector.setActive(name);
+    return new StrategyResp(selector.getActive(), selector.available());
 }
 ```
 
-Then set `spring.profiles.active=jwt`. The existing two strategies, the resolver, controllers, services remain untouched and uncompiled.
+---
+
+## Adding a new one later
+
+No old code touched or recompiled. You just:
+
+1. Add new code: one class `@Component("myStrategy") implements RiskSortStrategy`.
+2. Edit config: `riskmonitor.risk.sort-strategy=myStrategy`.
+
+Spring finds the new bean and drops it into the map. The selector, `RiskService`, the controller, and the existing strategies all stay as they are.

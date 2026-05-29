@@ -19,6 +19,8 @@ import Typography from '@mui/material/Typography';
 import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
 
 import { listTeamMembers } from '../api/teamsApi';
+import { formatRiskDateTime } from '../constants/risk';
+import { useLocale } from '../context/LocaleContext.jsx';
 import { useNotification } from '../context/NotificationContext';
 import { useTeam } from '../context/TeamContext';
 
@@ -34,6 +36,7 @@ export default function Teams() {
     joinTeam,
     refreshTeams,
   } = useTeam();
+  const { locale } = useLocale();
   const { showNotification } = useNotification();
   const [teamName, setTeamName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
@@ -246,7 +249,7 @@ export default function Teams() {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>User ID</TableCell>
+                      <TableCell>Member</TableCell>
                       <TableCell>Role</TableCell>
                       <TableCell>Joined</TableCell>
                     </TableRow>
@@ -254,9 +257,9 @@ export default function Teams() {
                   <TableBody>
                     {members.map((member) => (
                       <TableRow key={member.id}>
-                        <TableCell>{member.userId}</TableCell>
+                        <TableCell>{member.displayName || member.userId}</TableCell>
                         <TableCell><Chip size="small" label={member.role} /></TableCell>
-                        <TableCell>{new Date(member.joinedAt).toLocaleString()}</TableCell>
+                        <TableCell>{formatRiskDateTime(member.joinedAt, null, locale)}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>

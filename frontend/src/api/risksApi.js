@@ -54,6 +54,31 @@ export async function listRisks(teamId) {
     return response.json();
 }
 
+export async function getSortStrategy() {
+    const response = await fetch(`/api/risks/strategy`, {
+        headers: authHeaders()
+    });
+
+    if (!response.ok) {
+        throw await parseError(response, "Load sort strategy failed");
+    }
+
+    return response.json();
+}
+
+export async function setSortStrategy(name) {
+    const response = await fetch(`/api/risks/strategy?name=${encodeURIComponent(name)}`, {
+        method: "PUT",
+        headers: authHeaders()
+    });
+
+    if (!response.ok) {
+        throw await parseError(response, "Switch sort strategy failed");
+    }
+
+    return response.json();
+}
+
 export async function getRisk(id) {
     const response = await fetch(`/api/risks/${id}`, {
         headers: authHeaders()

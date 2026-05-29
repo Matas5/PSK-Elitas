@@ -1,103 +1,126 @@
 # Reactive Programming / Asynchronous Non-Blocking Communication
 
-Requirement: A time-consuming operation taking place on the backend shouldn't make the browser on the user end unresponsive, have them wait for the task to complete.
+Requirement: A time-consuming operation on the backend shouldn't make the browser wait or freeze. The page has to stay alive (responsive) while the work happens.
+
+The main showcase is report generation: you ask for a CSV, the request comes back instantly, the heavy work runs on a background thread, and the Reports page polls until it's ready while you keep clicking around. The risk list is a lighter second example.
 
 ---
 
-## Enabled async support
+## Example 1: turning async on
 
 **File:** [backend/src/main/java/com/riskmonitor/BackendApplication.java](backend/src/main/java/com/riskmonitor/BackendApplication.java)
+
+**How it works:** `@EnableAsync` makes `@Async` methods run on a background `task-N` thread instead of the caller's.
 
 ```java
 @SpringBootApplication
 @EnableAsync
-@EnableConfigurationProperties(SystemProperties.class)
-public class BackendApplication {
+public class BackendApplication { ... }
+```
 
-    public static void main(String[] args) {
-        SpringApplication.run(BackendApplication.class, args);
+---
+
+## Example 2: the request returns instantly
+
+**File:** [backend/src/main/java/com/riskmonitor/controller/ReportController.java](backend/src/main/java/com/riskmonitor/controller/ReportController.java)
+
+**How it works:** the POST saves a PENDING row, starts the background job, and returns `202` right away (~0.17s). The browser never waits for the actual work.
+
+```java
+@PostMapping("/csv")
+public ResponseEntity<ReportResp> generateCsv(@RequestParam UUID teamId, @CurrentUserId String userId) {
+    Report report = reportService.requestCsv(userId, teamId);   // saves PENDING + fires the async job
+    return ResponseEntity.status(HttpStatus.ACCEPTED).body(ReportResp.from(report));
+}
+```
+
+---
+
+## Example 3: the heavy work runs off-thread
+
+**File:** [backend/src/main/java/com/riskmonitor/service/ReportGenerator.java](backend/src/main/java/com/riskmonitor/service/ReportGenerator.java)
+
+**How it works:** runs on a `task-N` thread after the response is already sent. `simulateWork()` is a configurable delay standing in for a heavy job; when done it flips the row to READY.
+
+```java
+@Async
+public void generateCsvAsync(UUID reportId) {
+    Report report = reportRepository.findById(reportId).orElseThrow();
+    simulateWork();                                  // configurable delay (default 4s)
+    report.markReady(buildCsv(report.getTeamId()));
+    reportRepository.save(report);
+}
+```
+
+---
+
+## Example 4: the page stays alive
+
+**File:** [frontend/src/pages/Reports.jsx](frontend/src/pages/Reports.jsx)
+
+**How it works:** while a report is PENDING the page polls every 2s in the background. Nothing blocks, you can navigate or save a chart meanwhile; when it's READY the chip flips.
+
+```javascript
+useEffect(() => {
+  if (!reports.some((r) => r.status === 'PENDING')) return undefined;
+  const timer = setInterval(loadReports, 2000);
+  return () => clearInterval(timer);
+}, [reports, activeTeamId, loadReports]);
+```
+
+---
+
+## Example 5: the risk list (lighter case)
+
+**File:** [backend/src/main/java/com/riskmonitor/controller/RiskController.java](backend/src/main/java/com/riskmonitor/controller/RiskController.java)
+
+**How it works:** the handler returns a `CompletableFuture`, so Spring MVC frees the Tomcat worker thread and only finishes the request once the future resolves.
+
+```java
+@GetMapping
+public CompletableFuture<List<RiskResp>> listRisks(@CurrentUserId String userId,
+                                                   @RequestParam(required = false) UUID teamId) {
+    return riskService.listRisks(userId, teamId);   // service method is @Async
+}
+```
+
+---
+
+## Example 6: the artificial buffer (so the status is visible)
+
+**How it works:** on this data the CSV builds in a few milliseconds, so the row would flip PENDING to READY too fast to ever see it. `simulateWork()` is an artificial buffer: it holds the job in PENDING for a configured number of ms (default 4000), long enough to actually watch the status change while you poke around the page and confirm it stays responsive. Set the value to 0 to turn the buffer off.
+
+**File:** [backend/src/main/java/com/riskmonitor/service/ReportGenerator.java](backend/src/main/java/com/riskmonitor/service/ReportGenerator.java)
+
+```java
+@Value("${riskmonitor.reports.simulated-delay-ms:4000}")
+private long simulatedDelayMs;
+
+private void simulateWork() {
+    if (simulatedDelayMs <= 0) {
+        return;
+    }
+    try {
+        Thread.sleep(simulatedDelayMs);
+    } catch (InterruptedException ex) {
+        Thread.currentThread().interrupt();
     }
 }
 ```
 
-**How it works:** `@EnableAsync` activates Spring's `AsyncAnnotationBeanPostProcessor` returning `CompletableFuture`. More @ https://www.baeldung.com/java-completablefuture#bd-Asynchronous
+**File:** [backend/src/main/resources/application.properties](backend/src/main/resources/application.properties)
 
-
----
-
-## Async service
-
-**File:** [backend/src/main/java/com/riskmonitor/service/RiskService.java](backend/src/main/java/com/riskmonitor/service/RiskService.java)
-
-```java
-@Async
-@Transactional(readOnly = true)
-public CompletableFuture<List<RiskResp>> listRisks(String userId) {
-    log.info("listRisks executing asynchronously on thread {}", Thread.currentThread().getName());
-    List<RiskResp> result = riskRepository
-            .findAllByUserId(userId, Sort.by(Sort.Direction.ASC, "name"))
-            .stream()
-            .map(RiskResp::from)
-            .toList();
-    return CompletableFuture.completedFuture(result);
-}
-```
-
-**How it works:**
-
-- `@Async` hands the call off to a `TaskExecutor` thread and immediately returns a not-yet-completed `CompletableFuture`. The HTTP worker thread is **not blocked** waiting for the result.
-- `@Transactional(readOnly = true)` opens the DB transaction on the executor thread — preserving requirement #3 (one short transaction per HTTP request).
-- The thread name is logged so the dispatch is visible to anyone tailing the backend log.
-
----
-
-## Async handler
-
-**File:** [backend/src/main/java/com/riskmonitor/controller/RiskController.java](backend/src/main/java/com/riskmonitor/controller/RiskController.java)
-
-```java
-@GetMapping
-public CompletableFuture<List<RiskResp>> listRisks(@CurrentUserId String userId) {
-    return riskService.listRisks(userId);
-}
-```
-
-
----
-
-## Frontend changes
-
-**File:** [frontend/src/api/risksApi.js](frontend/src/api/risksApi.js)
-
-```javascript
-export async function listRisks() {
-    const res = await fetch(`${API_BASE}/risks`, { headers: authHeaders() });
-    if (!res.ok) throw new Error(await res.text());
-    return res.json();
-}
-```
-
-**File:** [frontend/src/hooks/useOptimisticLocking.js](frontend/src/hooks/useOptimisticLocking.js)
-
-```javascript
-const data = await listRisks();
-setRisks(data);
+```properties
+riskmonitor.reports.simulated-delay-ms=4000
 ```
 
 ---
 
-## What reactive changes
+## What you see
 
-### User POV
-
-The user can keep scrolling, interact with other areas, switch tabs, or trigger another action while the request is still being processedl.
-
-### Admin/System POV
-
-The async dispatch is visible in the backend log. Each call to `GET /api/risks` produces an `INFO` line tagged with the executing thread:
+The backend log shows the work on a `task-N` thread, with a gap between "running" and "ready" while the POST already returned:
 
 ```
-INFO --- [risk-monitor-backend] [some-thread] c.r.service.RiskService : listRisks executing asynchronously on thread task-3
+INFO [task-1] ReportGenerator : generateCsvAsync running on thread task-1
+INFO [task-1] ReportGenerator : Report 0ce1... ready (7006 bytes) on thread task-1
 ```
-
-`some-thread` is a fill-in space for the actual name of the thread that ended up, an output as such shows that async requests are being handeled appropriatly.

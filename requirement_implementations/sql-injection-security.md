@@ -108,7 +108,7 @@ Example:
 @GetMapping("/{id}")
 public RiskResp getRisk(
         @PathVariable UUID id,
-        @RequestHeader("X-User-Id") String userId
+        @CurrentUserId String userId
 )
 ```
 

@@ -2,10 +2,12 @@ package com.riskmonitor.service;
 
 import com.riskmonitor.dto.team.TeamStruct.CreateTeamRequest;
 import com.riskmonitor.dto.team.TeamStruct.JoinTeamRequest;
+import com.riskmonitor.entity.AppUser;
 import com.riskmonitor.entity.Risk;
 import com.riskmonitor.entity.Team;
 import com.riskmonitor.entity.TeamMember;
 import com.riskmonitor.entity.TeamRole;
+import com.riskmonitor.repository.AppUserRepository;
 import com.riskmonitor.repository.TeamMemberRepository;
 import com.riskmonitor.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
@@ -13,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
@@ -28,6 +32,19 @@ public class TeamService {
 
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
+    private final AppUserRepository appUserRepository;
+
+    // local users resolve to their username; google ids (and anything else) fall back to the raw id
+    @Transactional(readOnly = true)
+    public String resolveDisplayName(String userId) {
+        try {
+            return appUserRepository.findById(UUID.fromString(userId))
+                    .map(AppUser::getUsername)
+                    .orElse(userId);
+        } catch (IllegalArgumentException ex) {
+            return userId;
+        }
+    }
 
     @Transactional
     public TeamMember createTeam(CreateTeamRequest request, String userId) {
@@ -36,9 +53,25 @@ public class TeamService {
         return teamMemberRepository.save(new TeamMember(team, userId, TeamRole.OWNER));
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public List<TeamMember> getMyTeams(String userId) {
-        return teamMemberRepository.findAllByUserIdOrderByTeam_NameAsc(userId);
+        List<TeamMember> memberships = teamMemberRepository.findAllByUserIdOrderByTeam_NameAsc(userId);
+
+        // make sure everyone has their own "My Risks" team
+        boolean hasPersonal = memberships.stream().anyMatch(m -> m.getTeam().isPersonal());
+        if (!hasPersonal) {
+            Team personal = teamRepository.save(
+                    new Team("My Risks", generateUniqueInviteCode(), userId, true));
+            memberships = new ArrayList<>(memberships);
+            memberships.add(teamMemberRepository.save(new TeamMember(personal, userId, TeamRole.OWNER)));
+        }
+
+        // personal team first, then the rest by name
+        return memberships.stream()
+                .sorted(Comparator
+                        .comparing((TeamMember m) -> m.getTeam().isPersonal()).reversed()
+                        .thenComparing(m -> m.getTeam().getName(), String.CASE_INSENSITIVE_ORDER))
+                .toList();
     }
 
     @Transactional

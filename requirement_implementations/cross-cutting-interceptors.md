@@ -20,7 +20,10 @@ Requirement: All business logic actions must be logged to a file or database, in
 )
 public class BusinessOperationLoggingAspect {
 
-    @Around("execution(* com.riskmonitor.service..*(..))")
+    @Around(
+            "execution(* com.riskmonitor.service..*(..)) "
+                    + "&& !within(com.riskmonitor.service.UserResolver)"
+    )
     public Object logBusinessOperation(ProceedingJoinPoint joinPoint) throws Throwable {
         String username = resolveUsername();
         String authorities = resolveAuthorities();

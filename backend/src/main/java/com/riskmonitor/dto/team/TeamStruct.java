@@ -30,7 +30,8 @@ public final class TeamStruct {
             String inviteCode,
             TeamRole role,
             String ownerUserId,
-            Instant createdAt
+            Instant createdAt,
+            boolean personal
     ) {
         public static TeamResponse from(TeamMember member) {
             Team team = member.getTeam();
@@ -40,7 +41,8 @@ public final class TeamStruct {
                     team.getInviteCode(),
                     member.getRole(),
                     team.getOwnerUserId(),
-                    team.getCreatedAt()
+                    team.getCreatedAt(),
+                    team.isPersonal()
             );
         }
     }
@@ -48,13 +50,15 @@ public final class TeamStruct {
     public record TeamMemberResponse(
             UUID id,
             String userId,
+            String displayName,
             TeamRole role,
             Instant joinedAt
     ) {
-        public static TeamMemberResponse from(TeamMember member) {
+        public static TeamMemberResponse from(TeamMember member, String displayName) {
             return new TeamMemberResponse(
                     member.getId(),
                     member.getUserId(),
+                    displayName,
                     member.getRole(),
                     member.getJoinedAt()
             );

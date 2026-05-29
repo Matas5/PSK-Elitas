@@ -8,6 +8,7 @@ import com.riskmonitor.entity.AuditContext;
 import com.riskmonitor.entity.Risk;
 import com.riskmonitor.entity.RiskValue;
 import com.riskmonitor.entity.Team;
+import com.riskmonitor.repository.AppUserRepository;
 import com.riskmonitor.repository.RiskRepository;
 import com.riskmonitor.repository.RiskValueRepository;
 import com.riskmonitor.repository.TeamMemberRepository;
@@ -95,7 +96,13 @@ class RiskValueServiceTests {
                     throw new UnsupportedOperationException(method.getName());
                 }
         );
-        TeamService teamService = new TeamService(teamRepository, teamMemberRepository);
+        AppUserRepository appUserRepository = repositoryProxy(
+                AppUserRepository.class,
+                (proxy, method, args) -> {
+                    throw new UnsupportedOperationException(method.getName());
+                }
+        );
+        TeamService teamService = new TeamService(teamRepository, teamMemberRepository, appUserRepository);
 
         RiskValueService riskValueService = new RiskValueService(riskValueRepository, riskRepository, teamService);
         List<RiskValue> saved = riskValueService.createValues(

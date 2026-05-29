@@ -104,7 +104,7 @@ export default function App() {
         />
 
         <Route
-          path={ROUTES.REPORTS}
+          path={ROUTES.DOWNLOADS}
           element={(
             <RequireAuth>
               <AuthedShell><Reports /></AuthedShell>

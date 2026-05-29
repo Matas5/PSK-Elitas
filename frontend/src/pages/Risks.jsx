@@ -4,12 +4,15 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import ButtonGroup from '@mui/material/ButtonGroup';
 import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
@@ -18,21 +21,34 @@ import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 
-import { deleteRisk, listRisks } from '../api/risksApi';
+import { deleteRisk, getSortStrategy, listRisks, setSortStrategy } from '../api/risksApi';
+import { requestCsvReport } from '../api/reportsApi';
 import CreateRiskDialog from '../components/CreateRiskDialog';
 import LogRiskValueDialog from '../components/LogRiskValueDialog';
 import RiskDetailsDialog from '../components/RiskDetailsDialog';
+import RiskLevelIndicator from '../components/RiskLevelIndicator';
 import { useNotification } from '../context/NotificationContext';
 import { useTeam } from '../context/TeamContext';
 import {
+  RISK_LEVELS,
   formatDirection,
   formatFrequency,
   formatThresholds,
 } from '../constants/risk';
 import { ROUTES } from '../routes';
+
+// labels for the backend strategy bean names
+const STRATEGY_LABELS = {
+  highCount: 'By high-risk count',
+  average: 'By average severity',
+};
 
 export default function Risks() {
   const [createOpen, setCreateOpen] = useState(false);
@@ -45,6 +61,11 @@ export default function Risks() {
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+  const [strategy, setStrategy] = useState('');
+  const [strategies, setStrategies] = useState([]);
+  const [switching, setSwitching] = useState(false);
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportMenuAnchor, setReportMenuAnchor] = useState(null);
   const { showNotification } = useNotification();
   const { activeTeam } = useTeam();
   const navigate = useNavigate();
@@ -79,6 +100,46 @@ export default function Risks() {
     setConfirmDeleteOpen(false);
     loadRiskList();
   }, [loadRiskList]);
+
+  useEffect(() => {
+    getSortStrategy()
+      .then(({ active, available }) => {
+        setStrategy(active);
+        setStrategies(available || []);
+      })
+      .catch(() => {
+        // no toggle if this fails, not fatal
+      });
+  }, []);
+
+  const handleStrategyChange = async (_event, next) => {
+    if (!next || next === strategy || switching) return;
+    setSwitching(true);
+    try {
+      const { active } = await setSortStrategy(next);
+      setStrategy(active);
+      await loadRiskList();
+    } catch (err) {
+      showNotification(err.message || 'Failed to switch ranking strategy.', 'error');
+    } finally {
+      setSwitching(false);
+    }
+  };
+
+  // ranked summary export, defers to Downloads. plain click uses the active strategy,
+  // the dropdown picks a specific one.
+  const handleExportReport = async (strategyName) => {
+    setReportMenuAnchor(null);
+    setReportBusy(true);
+    try {
+      await requestCsvReport(activeTeamId, strategyName);
+      showNotification('Report is generating, find it in Downloads shortly.', 'info');
+    } catch (err) {
+      showNotification(err.message || 'Failed to start report.', 'error');
+    } finally {
+      setReportBusy(false);
+    }
+  };
 
   const handleCreated = (risk) => {
     showNotification(`Risk "${risk.name}" created.`, 'success');
@@ -154,18 +215,102 @@ export default function Risks() {
         <Box>
           <Typography variant="h1" gutterBottom>Risks</Typography>
           <Typography variant="body2" color="text.secondary">
-            Review created risks and choose which ones to inspect, edit, or delete.
+            Create, inspect, edit or delete risks.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddOutlinedIcon />}
-          onClick={() => setCreateOpen(true)}
-          disabled={!activeTeam}
-        >
-          Create risk
-        </Button>
+        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+          {strategies.length > 1 ? (
+            <>
+              <ButtonGroup variant="outlined" disabled={!activeTeam || risks.length === 0 || reportBusy}>
+                <Button
+                  startIcon={<AssessmentOutlinedIcon />}
+                  onClick={() => handleExportReport(strategy)}
+                >
+                  {reportBusy ? 'Generating…' : 'Risk report summary'}
+                </Button>
+                <Button
+                  size="small"
+                  aria-label="Choose ranking for the report"
+                  onClick={(e) => setReportMenuAnchor(e.currentTarget)}
+                >
+                  <ArrowDropDownIcon />
+                </Button>
+              </ButtonGroup>
+              <Menu
+                anchorEl={reportMenuAnchor}
+                open={Boolean(reportMenuAnchor)}
+                onClose={() => setReportMenuAnchor(null)}
+              >
+                {strategies.map((name) => (
+                  <MenuItem key={name} onClick={() => handleExportReport(name)}>
+                    {STRATEGY_LABELS[name] || name}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </>
+          ) : (
+            <Button
+              variant="outlined"
+              startIcon={<AssessmentOutlinedIcon />}
+              onClick={() => handleExportReport(strategy)}
+              disabled={!activeTeam || risks.length === 0 || reportBusy}
+            >
+              {reportBusy ? 'Generating…' : 'Risk report summary'}
+            </Button>
+          )}
+          <Button
+            variant="contained"
+            startIcon={<AddOutlinedIcon />}
+            onClick={() => setCreateOpen(true)}
+            disabled={!activeTeam}
+          >
+            Create risk
+          </Button>
+        </Stack>
       </Stack>
+
+      {activeTeam && !loading && !loadError && risks.length > 0 && (
+        <Stack
+          direction="row"
+          spacing={2}
+          alignItems="center"
+          justifyContent="space-between"
+          flexWrap="wrap"
+          sx={{ mb: 2, gap: 1.5 }}
+        >
+          {strategies.length > 1 ? (
+            <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap">
+              <Typography variant="body2" color="text.secondary">
+                Ranking strategy
+              </Typography>
+              <ToggleButtonGroup
+                size="small"
+                exclusive
+                value={strategy}
+                onChange={handleStrategyChange}
+                disabled={switching}
+              >
+                {strategies.map((name) => (
+                  <ToggleButton key={name} value={name}>
+                    {STRATEGY_LABELS[name] || name}
+                  </ToggleButton>
+                ))}
+              </ToggleButtonGroup>
+            </Stack>
+          ) : <Box />}
+
+          <Stack direction="row" spacing={2} alignItems="center" flexWrap="wrap">
+            {Object.entries(RISK_LEVELS).map(([key, meta]) => (
+              <Stack key={key} direction="row" spacing={0.75} alignItems="center">
+                <RiskLevelIndicator level={key} />
+                <Typography variant="caption" color="text.secondary">
+                  Level: {meta.label}
+                </Typography>
+              </Stack>
+            ))}
+          </Stack>
+        </Stack>
+      )}
 
       {!activeTeam && (
         <Paper sx={{ p: 4 }}>
@@ -236,9 +381,12 @@ export default function Risks() {
                   sx={{ cursor: 'pointer' }}
                 >
                   <TableCell>
-                    <Typography variant="body2" sx={{ fontWeight: 700 }}>
-                      {risk.name}
-                    </Typography>
+                    <Stack direction="row" spacing={1.25} alignItems="center">
+                      <RiskLevelIndicator level={risk.level} />
+                      <Typography variant="body2" sx={{ fontWeight: 700 }}>
+                        {risk.name}
+                      </Typography>
+                    </Stack>
                   </TableCell>
                   <TableCell>{risk.category || 'Uncategorized'}</TableCell>
                   <TableCell>{formatFrequency(risk)}</TableCell>
