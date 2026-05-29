@@ -28,18 +28,17 @@ npm-debug.log*
 /frontend/dist/
 /backend/build/
 
-# Claude (local-only — never commit)
+# Claude
 CLAUDE.md
 PROJECT-INFO.md
 .claude/
 .claude.json
 
-# Nix / direnv (personal tooling, not project-required)
+# Nix tooling
 .envrc
 .direnv/
 result
 result-*
 
-# Local-only deliverable drafts
 requirement_implementations/product-conception-diagram.html
 requirement_implementations/wire-frames/
