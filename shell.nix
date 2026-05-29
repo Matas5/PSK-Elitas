@@ -23,6 +23,13 @@ let
     echo "clean build done, launching..."
     exec start
   '';
+
+  report = pkgs.writeShellScriptBin "report" ''
+    set -e
+    typst compile requirement_implementations/technine-ataskaita.typ \
+                  requirement_implementations/technine-ataskaita.pdf
+    echo "wrote requirement_implementations/technine-ataskaita.pdf"
+  '';
 in
 pkgs.mkShell {
   packages = with pkgs; [
@@ -35,8 +42,12 @@ pkgs.mkShell {
     jq
     ripgrep
 
+    typst
+    poppler-utils
+
     start
     fresh
+    report
   ];
 
   shellHook = ''
@@ -47,5 +58,6 @@ pkgs.mkShell {
     echo ""
     echo "  fresh  -> wipe stale target/node_modules, reinstall, recompile, then launch"
     echo "  start  -> just bring up postgres + backend + auth + frontend"
+    echo "  report -> compile the 2-page technical report to requirement_implementations/technine-ataskaita.pdf"
   '';
 }

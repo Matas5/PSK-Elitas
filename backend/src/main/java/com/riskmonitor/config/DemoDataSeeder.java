@@ -36,6 +36,8 @@ public class DemoDataSeeder implements CommandLineRunner {
 
     private static final String DEMO_USERNAME = "demo";
     private static final String DEMO_PASSWORD = "demo1234";
+    private static final String EMPLOYEE_USERNAME = "demo_employee";
+    private static final String EMPLOYEE_PASSWORD = "demo1234";
 
     private final AppUserRepository userRepo;
     private final RiskRepository riskRepo;
@@ -47,13 +49,20 @@ public class DemoDataSeeder implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
-        AppUser demoUser = userRepo.findByUsername(DEMO_USERNAME)
-                .orElseGet(() -> userRepo.save(
-                        new AppUser(DEMO_USERNAME, passwordEncoder.encode(DEMO_PASSWORD))
-                ));
+        AppUser demoUser = ensureUser(DEMO_USERNAME, DEMO_PASSWORD);
+        seedDemo(demoUser.getId().toString());
 
-        String demoUserId = demoUser.getId().toString();
+        AppUser employee = ensureUser(EMPLOYEE_USERNAME, EMPLOYEE_PASSWORD);
+        seedEmployee(employee.getId().toString(), demoUser.getId().toString());
+    }
 
+    private AppUser ensureUser(String username, String rawPassword) {
+        return userRepo.findByUsername(username)
+                .orElseGet(() -> userRepo.save(new AppUser(username, passwordEncoder.encode(rawPassword))));
+    }
+
+    // DEMO SEED
+    private void seedDemo(String demoUserId) {
         if (!riskRepo.findAllByUserId(demoUserId, Sort.unsorted()).isEmpty()) {
             log.info("Demo data already present for user {}, skipping seed", demoUserId);
             return;
@@ -61,7 +70,7 @@ public class DemoDataSeeder implements CommandLineRunner {
 
         Instant validFrom = Instant.now().minus(60, ChronoUnit.DAYS);
 
-        // personal "My Risks" team
+        // "My Risks" team
         Team mine = ensureTeam(demoUserId, "My Risks", true, "RM-MINE");
         seedRisks(validFrom, List.of(
                 new Risk(mine, demoUserId, "Personal commute time", "Personal",
@@ -79,7 +88,7 @@ public class DemoDataSeeder implements CommandLineRunner {
                 {0, 0, 1, 1, 2, 1, 1, 0, 1, 1, 2, 1, 0, 0, 1},
         });
 
-        // shared "Demo Risk Team" (the ranking-strategy showcase data)
+        // shared "Demo Risk Team"
         Team demoTeam = ensureTeam(demoUserId, "Demo Risk Team", false, "RM-DEMO");
         seedRisks(validFrom, List.of(
                 new Risk(demoTeam, demoUserId, "Population density under drone route", "Aerial operations",
@@ -136,7 +145,60 @@ public class DemoDataSeeder implements CommandLineRunner {
         log.info("Demo data seeded for user {}", demoUserId);
     }
 
-    // find one of the demo user's teams by name, or create it (with an OWNER membership)
+    // semplte
+    //
+    private void seedEmployee(String employeeId, String demoUserId) {
+        if (!riskRepo.findAllByUserId(employeeId, Sort.unsorted()).isEmpty()) {
+            log.info("Employee demo data already present for user {}, skipping", employeeId);
+            return;
+        }
+
+        Instant validFrom = Instant.now().minus(60, ChronoUnit.DAYS);
+
+        // demo_employee team personal
+        Team mine = ensureTeam(employeeId, "My Risks", true, "RM-EMP-MINE");
+        seedRisks(validFrom, List.of(
+                new Risk(mine, employeeId, "Daily standup overrun", "Personal",
+                        "Minutes the standup runs past its 15-minute box.",
+                        1L, RiskPeriod.DAY, "min",
+                        null, null, new BigDecimal("5.0000"), new BigDecimal("15.0000"),
+                        validFrom, null),
+                new Risk(mine, employeeId, "Open PR review backlog", "Personal",
+                        "Pull requests waiting on my review.",
+                        1L, RiskPeriod.DAY, "PRs",
+                        null, null, new BigDecimal("3.0000"), new BigDecimal("8.0000"),
+                        validFrom, null)
+        ), new int[][] {
+                {0, 1, 1, 2, 1, 0, 1, 1, 2, 1, 0, 1, 1, 0, 1},
+                {1, 1, 2, 1, 1, 2, 1, 1, 1, 2, 1, 1, 0, 1, 1},
+        });
+
+        // member joinp)
+        Team demoTeam = ensureTeam(demoUserId, "Demo Risk Team", false, "RM-DEMO");
+        addMembership(demoTeam, employeeId, TeamRole.MEMBER);
+
+        // risk ownership
+        seedRisks(validFrom, List.of(
+                new Risk(demoTeam, employeeId, "Onboarding tasks overdue", "People",
+                        "New-hire onboarding tasks past their due date.",
+                        1L, RiskPeriod.DAY, "tasks",
+                        null, null, new BigDecimal("3.0000"), new BigDecimal("8.0000"),
+                        validFrom, null)
+        ), new int[][] {
+                {2, 2, 1, 1, 2, 1, 0, 1, 1, 2, 1, 1, 2, 1, 0},
+        });
+
+        log.info("Employee demo data seeded for user {} (member of demo's Demo Risk Team)", employeeId);
+    }
+
+
+    private void addMembership(Team team, String userId, TeamRole role) {
+        if (!teamMemberRepo.existsByTeamIdAndUserId(team.getId(), userId)) {
+            teamMemberRepo.save(new TeamMember(team, userId, role));
+        }
+    }
+
+
     private Team ensureTeam(String demoUserId, String name, boolean personal, String codeBase) {
         return teamMemberRepo.findAllByUserIdOrderByTeam_NameAsc(demoUserId).stream()
                 .map(TeamMember::getTeam)
@@ -159,7 +221,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         return code;
     }
 
-    // saves the risks, then fills each with one reading per profile entry over the last 60 days
+    // drip
     private void seedRisks(Instant validFrom, List<Risk> risks, int[][] profiles) {
         List<Risk> saved = riskRepo.saveAll(risks);
         int points = profiles[0].length;
@@ -176,7 +238,7 @@ public class DemoDataSeeder implements CommandLineRunner {
         valueRepo.saveAll(values);
     }
 
-    // builds a reading that lands in the requested band for the risk's upper thresholds
+    // thresholds
     private static BigDecimal valueForSeverity(Risk risk, int severity) {
         BigDecimal upperMid = risk.getUpperMidThreshold();
         BigDecimal upperMax = risk.getUpperMaxThreshold();
