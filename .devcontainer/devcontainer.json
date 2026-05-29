@@ -1,0 +1,11 @@
+{
+  "name": "Bulvinuk.ai Risk System",
+  "image": "mcr.microsoft.com/devcontainers/java:1-17-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "22" },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+  "forwardPorts": [5173, 8081, 3000, 5433],
+  "postCreateCommand": "cd frontend && npm install && cd ../auth-server && npm install",
+  "remoteUser": "vscode"
+}
