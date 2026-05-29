@@ -63,8 +63,7 @@ export function AuthProvider({ children }) {
     prevUserRef.current = user;
   }, [user]);
 
-  // register the user's name/email so team member lists show it instead of a raw id
-  // (mainly for google users, who have no backend account). fire-and-forget.
+  // register name/email so member lists show it not a raw id (google users). fire-and-forget.
   useEffect(() => {
     if (!user?.userId) return;
     registerProfile({

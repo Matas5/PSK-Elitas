@@ -37,8 +37,7 @@ public class TeamService {
     private final AppUserRepository appUserRepository;
     private final UserProfileRepository userProfileRepository;
 
-    // local accounts resolve to their AppUser username; otherwise (google users) use the
-    // display name the client registered; only fall back to the raw id if nothing is known.
+    // AppUser username for local accounts, else the registered profile name, else the raw id
     @Transactional(readOnly = true)
     public String resolveDisplayName(String userId) {
         try {
@@ -47,7 +46,7 @@ public class TeamService {
                 return local.get();
             }
         } catch (IllegalArgumentException ignored) {
-            // userId is not a UUID (e.g. a google id); fall through to the profile lookup
+            // not a UUID (google id), try the profile
         }
         return userProfileRepository.findById(userId)
                 .map(UserProfile::getDisplayName)

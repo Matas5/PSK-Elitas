@@ -8,9 +8,8 @@ import lombok.Getter;
 
 import java.time.Instant;
 
-// directory of who a user id belongs to. local accounts resolve via AppUser; this covers
-// google users (no AppUser row) by the display name their client reports after signing in.
-// keyed by the raw user id string, so it works for both UUIDs and google ids.
+// user id -> display name, so google users (no AppUser row) show a name not a raw id.
+// keyed by the id string so it fits both UUIDs and google ids.
 @Entity
 @Table(name = "user_profile")
 @Getter

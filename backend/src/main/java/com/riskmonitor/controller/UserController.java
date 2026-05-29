@@ -11,8 +11,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// the signed-in client registers its display name/email so team member lists can show a
-// name instead of a raw id (google users have no AppUser row to resolve against).
+// client registers its name/email so member lists show it instead of a raw id
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
