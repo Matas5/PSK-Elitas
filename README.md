@@ -37,9 +37,16 @@ A cross-platform alternative (works on Windows, macOS, Linux). You only need **V
 
 1. Open the project folder in VS Code.
 2. Run **"Dev Containers: Reopen in Container"** (it uses `.devcontainer/`). VS Code builds a
-   Linux environment with Java 17 and Node 22 and installs the npm dependencies.
-3. In the VS Code terminal, run the four **Launch on Linux** commands above. The ports are
-   forwarded to your machine, so open http://localhost:5173 in your normal browser.
+   Linux environment with Java 17, Node 22 and Docker, and installs the npm dependencies.
+3. In the VS Code terminal run the launcher:
+
+   ```bash
+   bash .devcontainer/launch.sh
+   ```
+
+   It starts Postgres, backend, auth server and frontend together (Ctrl-C stops all). When
+   VS Code says port 5173 is forwarded, open **http://localhost:5173** and log in with
+   `demo` / `demo1234`.
 
 ---
 
