@@ -83,7 +83,7 @@ export function formatDirection(risk) {
 export const RISK_LEVELS = Object.freeze({
   LOW: { label: 'Low', color: '#2e7d32', shape: 'circle', colorName: 'Green' },
   MEDIUM: { label: 'Medium', color: '#f59e0b', shape: 'square', colorName: 'Yellow' },
-  HIGH: { label: 'High', color: '#f01f29', shape: 'triangle', colorName: 'Red' },
+  HIGH: { label: 'High', color: '#dc2626', shape: 'triangle', colorName: 'Red' },
 });
 
 export function classifyRiskLevel(risk, value) {

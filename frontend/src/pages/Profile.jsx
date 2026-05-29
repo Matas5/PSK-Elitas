@@ -91,7 +91,7 @@ export default function Profile() {
                   </Select>
                 </FormControl>
                 <Typography variant="caption" color="text.secondary">
-                  {dateStyleLabel}, i.e {datePreview}
+                  {dateStyleLabel}, e.g. {datePreview}
                 </Typography>
               </Stack>
             </Stack>

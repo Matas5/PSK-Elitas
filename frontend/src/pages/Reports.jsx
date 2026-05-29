@@ -109,7 +109,7 @@ export default function Reports() {
         <Box>
           <Typography variant="h1" gutterBottom>Downloads</Typography>
           <Typography variant="body2" color="text.secondary">
-            Backlog of downloaded .png, .csv files relating to risk information get defered here (Team specific)
+            Saved .csv and .png exports for this team. Generate them from the Risks and Risk Graphs pages.
           </Typography>
         </Box>
       </Stack>
