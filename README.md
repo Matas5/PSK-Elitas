@@ -4,16 +4,28 @@
 
 <h1 align="center">Risk monitoring system</h1>
 
-Bare-bones risk category, value, graphing rish detection system (+with color-coding)!
+**Bare-bones risk category, value, graphing rish detection system (+with color-coding)!**
 
-## Google Auth
-> [!warning]
-> !!! Disclaimer: you need a `.env` FOR GOOGLE AUTH !!!
->
-> A `.env` file at the project root, following the committed `.env.example` pattern, is required.
-> It holds the secrets the auth server uses (Google OAuth 2.0 client id/secret, session secret).
-> 
-> Without it, local login (demo users) still work, but the auth server and Google sign-in will not. You need to get the secrets from one of our team members for it (or you can reverse engineer it yourself with your own secrets with minimal effort.)
+
+# How to launch, gotchas
+
+
+## Launch with VS Code (Dev Container)
+
+You need: Docker Desktop, VS Code, and the **Dev Containers** extension inside of Visual Studio Code.
+
+1. Start Docker Desktop (wait until it says the engine is running).
+2. Open the project folder in VS Code.
+3. `Ctrl+Shift+P` -> **">Dev Containers: Reopen in Container"**. (Note: first build might take a little while :< )
+4. Open a terminal in the container  and launch everything:
+
+   ```bash
+   bash .devcontainer/launch.sh
+   ```
+
+   This brings up all the stuff.
+5. When VS Code says port 5173 is forwarded, open **http://localhost:5173** and you are ready to login.
+
 
 ## Users list
 
@@ -33,28 +45,14 @@ Bare-bones risk category, value, graphing rish detection system (+with color-cod
 
 ---
 
-## Launch with VS Code (Dev Container)
-
-You need: Docker Desktop, VS Code, and the **Dev Containers** extension inside of Visual Studio Code.
-
-1. Start Docker Desktop (wait until it says the engine is running).
-2. Open the project folder in VS Code.
-3. `Ctrl+Shift+P` -> **">Dev Containers: Reopen in Container"**. (Note: first build might take a little while :< )
-4. Open a terminal in the container  and launch everything:
-
-   ```bash
-   bash .devcontainer/launch.sh
-   ```
-
-   This brings up all the stuff.
-5. When VS Code says port 5173 is forwarded, open **http://localhost:5173** and log in `demo` / `demo1234`.
-
-
-
-GOTCHAS WE HAD PROBLEM WITH:
-- launch.sh errors with `$'\r'` or `no such service: postgres\r`? Your checkout has Windows line endings. Fix once: `sed -i 's/\r$//' .devcontainer/launch.sh` then rerun. (Fresh clones are fine, `.gitattributes` forces LF.)
-- Auth server crashes with `OAuth2Strategy requires a clientID`? That is just the missing `.env` (Google creds). Local `demo` login still works.
-- Build dies on disk space or an expired yarn apt key? Free space in Docker Desktop (`docker system prune -a`) and rebuild without cache.
+## Google Auth
+> [!warning]
+> !!! Disclaimer: you need a `.env` FOR GOOGLE AUTH !!!
+>
+> A `.env` file at the project root, following the committed `.env.example` pattern, is required.
+> It holds the secrets the auth server uses (Google OAuth 2.0 client id/secret, session secret).
+> 
+> Without it, local login (demo users) still work, but the auth server and Google sign-in will not. You need to get the secrets from one of our team members for it (or you can reverse engineer it yourself with your own secrets with minimal effort.)
 
 
 ---
@@ -109,5 +107,3 @@ Also, ff Nix has no nixpkgs channel configured, point it at one inline:
 ```bash
 nix-shell -I nixpkgs=channel:nixos-25.11 --run fresh
 ```
-
-**Stop**: press `Ctrl-C` in that terminal.
