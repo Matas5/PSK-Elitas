@@ -1,7 +1,7 @@
 package com.riskmonitor.service;
 
 import java.time.Instant;
-import java.time.ZoneOffset;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
@@ -20,8 +20,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ReportService {
 
+    // local-time stamp for filenames (server time zone), not UTC
     private static final DateTimeFormatter STAMP =
-            DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").withZone(ZoneOffset.UTC);
+            DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss").withZone(ZoneId.systemDefault());
 
     private final ReportRepository reportRepository;
     private final TeamService teamService;
@@ -31,7 +32,7 @@ public class ReportService {
     // otherwise the worker could look it up before it exists. that's why this isn't @Transactional.
     public Report requestCsv(String userId, UUID teamId, String strategyName) {
         teamService.assertUserIsTeamMember(teamId, userId);
-        String fileName = "risk-report-" + STAMP.format(Instant.now()) + ".csv";
+        String fileName = "risk-summary-" + STAMP.format(Instant.now()) + ".csv";
         Report report = reportRepository.save(
                 new Report(userId, teamId, fileName, "text/csv", ReportType.RISK_CSV, ReportStatus.PENDING));
         reportGenerator.generateCsvAsync(report.getId(), strategyName);

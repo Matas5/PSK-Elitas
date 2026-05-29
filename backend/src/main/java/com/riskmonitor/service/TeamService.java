@@ -7,9 +7,11 @@ import com.riskmonitor.entity.Risk;
 import com.riskmonitor.entity.Team;
 import com.riskmonitor.entity.TeamMember;
 import com.riskmonitor.entity.TeamRole;
+import com.riskmonitor.entity.UserProfile;
 import com.riskmonitor.repository.AppUserRepository;
 import com.riskmonitor.repository.TeamMemberRepository;
 import com.riskmonitor.repository.TeamRepository;
+import com.riskmonitor.repository.UserProfileRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,17 +35,23 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final TeamMemberRepository teamMemberRepository;
     private final AppUserRepository appUserRepository;
+    private final UserProfileRepository userProfileRepository;
 
-    // local users resolve to their username; google ids (and anything else) fall back to the raw id
+    // AppUser username for local accounts, else the registered profile name, else the raw id
     @Transactional(readOnly = true)
     public String resolveDisplayName(String userId) {
         try {
-            return appUserRepository.findById(UUID.fromString(userId))
-                    .map(AppUser::getUsername)
-                    .orElse(userId);
-        } catch (IllegalArgumentException ex) {
-            return userId;
+            var local = appUserRepository.findById(UUID.fromString(userId)).map(AppUser::getUsername);
+            if (local.isPresent()) {
+                return local.get();
+            }
+        } catch (IllegalArgumentException ignored) {
+            // not a UUID (google id), try the profile
         }
+        return userProfileRepository.findById(userId)
+                .map(UserProfile::getDisplayName)
+                .filter(name -> name != null && !name.isBlank())
+                .orElse(userId);
     }
 
     @Transactional

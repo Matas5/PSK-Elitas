@@ -1,6 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useCallback, useContext, useEffect, useRef, useMemo, useState } from 'react';
 
+import { registerProfile } from '../api/usersApi';
+
 const STORAGE_KEY = 'auth_user';
 
 const AuthContext = createContext(null);
@@ -59,6 +61,15 @@ export function AuthProvider({ children }) {
       setJustLoggedIn(true);
     }
     prevUserRef.current = user;
+  }, [user]);
+
+  // register name/email so member lists show it not a raw id (google users). fire-and-forget.
+  useEffect(() => {
+    if (!user?.userId) return;
+    registerProfile({
+      displayName: user.displayName || user.username || '',
+      email: user.email || '',
+    }).catch(() => {});
   }, [user]);
 
   const login = useCallback((nextUser) => {

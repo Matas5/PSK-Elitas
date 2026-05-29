@@ -1,265 +1,117 @@
-# PSK-Elitas
+# Risk monitoring system
 
-Risk-monitor app. Spring Boot 4 / Java 17 backend, React 19 + Vite + MUI frontend, PostgreSQL 16, and a small Node/Express auth server that handles Google OAuth (Passport).
 
-| Service     | Port (host) | Source              |
-|-------------|-------------|---------------------|
-| Frontend    | 5173        | `frontend/`         |
-| Backend     | 8081        | `backend/`          |
-| Auth server | 3000        | `auth-server/`      |
-| PostgreSQL  | 5433        | `docker-compose.yml`|
 
----
+## !!! Disclaimer: you need a `.env` !!!
 
-## 1. Required Software
+A `.env` file at the project root, following the committed `.env.example` pattern, is required.
+It holds the secrets the auth server uses (Google OAuth 2.0 client id/secret, session secret).
 
-- Git
-- Docker Desktop (or Docker Engine + Compose)
-- Java 17 (only if you want to run the backend outside Docker)
-- Node.js + npm (only if you want to run the frontend/authserver outside Docker)
-- IntelliJ IDEA (optional)
+Without it, local login (`demo` / pass:`demo1234` and `demo_employee` / pass:`demo1234`)  still works, but the auth server and Google
+sign-in will not. `.env` is gitignored, so it never ships in the repo; get the shared developer secrets from official team members of the project. 
 
----
+## Users list
+| Demo user name               | Password                                 |
+|--------------------|---------------------------------------|
+| demo           | demo1234                 | 
+| demo_employee     | demo1234      |
 
-## 2. Clone the Repository and Branch Workflow
+## What lives where at runtime
 
-```bash
-cd ~/Desktop
-git clone https://github.com/Matas5/PSK-Elitas.git
-cd PSK-Elitas
-git checkout Dev
-git pull origin Dev
-```
-
-### Development workflow
-
-We do not work directly on `main`. `main` is the production/stable branch.
-
-During development we work from `Dev`. For each Jira work item, create a feature branch off `Dev`.
-
-Feature branch naming:
-
-```
-feature/007-BE-implemented-x-functionality
-```
-
-Where:
-
-- `007` — Jira work item number
-- `BE` — backend task (use `FE` for frontend)
-- `implemented-x-functionality` — short description
-
-Examples:
-
-```
-feature/007-BE-implemented-health-endpoint
-feature/012-FE-created-risk-form
-feature/018-BE-added-risk-repository
-```
-
-Create a feature branch:
-
-```bash
-git checkout Dev
-git pull origin Dev
-git checkout -b feature/007-BE-implemented-x-functionality
-```
-
-When done:
-
-```bash
-git push -u origin feature/007-BE-implemented-x-functionality
-```
-
-Open a Pull Request from your feature branch into `Dev`. At the end of the sprint `Dev` is merged into `main`.
+| Service     | URL                     | Source               |
+|-------------|-------------------------|----------------------|
+| Frontend    | http://localhost:5173   | `frontend/`          |
+| Backend     | http://localhost:8081   | `backend/`           |
+| Auth server | http://localhost:3000   | `auth-server/`       |
+| PostgreSQL  | localhost:5433          | `docker-compose.yml` |
 
 ---
 
-## 3. Project Structure
+## Launch with VS Code (Dev Container)
 
-```
-PSK-Elitas/
-├── backend/             Spring Boot backend (Maven, Java 17)
-├── frontend/            React + Vite frontend
-├── auth-server/         Node/Express auth server (Google OAuth)
-│   ├── authServer.js
-│   ├── passport.js
-│   ├── routes/
-│   ├── package.json
-│   └── Dockerfile
-├── docker-compose.yml   Postgres + authserver + backend + frontend
-├── .env.example         Template for local secrets
-└── README.md
-```
+Cross-platform, no Java/Node needed on the host. You need: Docker Desktop, VS Code, and the **Dev Containers** extension.
 
----
+1. Start Docker Desktop (wait until it says the engine is running).
+2. Open the project folder in VS Code.
+3. `Ctrl+Shift+P` -> **"Dev Containers: Reopen in Container"**. First build pulls the image and installs deps, give it a few minutes.
+4. Open a terminal in the container (`` Ctrl+` ``) and launch everything:
 
-## 4. Google OAuth Setup
+   ```bash
+   bash .devcontainer/launch.sh
+   ```
 
-The project uses **shared development OAuth credentials** so the whole team can develop locally without each spinning up a Google Cloud project.
+   Brings up Postgres, backend, auth server and frontend together. `Ctrl-C` stops all.
+5. When VS Code says port 5173 is forwarded, open **http://localhost:5173** and log in `demo` / `demo1234`.
 
-Ask your team lead for:
-
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
-
-Store them in your password manager — never paste them into Slack, email, or git.
-
-### Google Cloud Console settings (for reference)
-
-If you ever need to update the OAuth app:
-
-- **Authorized JavaScript origins:** `http://localhost:3000`
-- **Authorized redirect URIs:** `http://localhost:3000/auth/callback`
+Gotchas:
+- launch.sh errors with `$'\r'` or `no such service: postgres\r`? Your checkout has Windows line endings. Fix once: `sed -i 's/\r$//' .devcontainer/launch.sh` then rerun. (Fresh clones are fine, `.gitattributes` forces LF.)
+- Auth server crashes with `OAuth2Strategy requires a clientID`? That is just the missing `.env` (Google creds). Local `demo` login still works.
+- Build dies on disk space or an expired yarn apt key? Free space in Docker Desktop (`docker system prune -a`) and rebuild without cache.
 
 ---
 
-## 5. Create your `.env`
+## Health checks
 
-From the repo root:
+| What               | URL                                   | Expected |
+|--------------------|---------------------------------------|----------|
+| Frontend           | http://localhost:5173                 | UI loads |
+| Backend health     | http://localhost:8081/api/health      | `OK`     |
+| Auth server config | http://localhost:3000/debug/config    | JSON     |
 
-```bash
-cp .env.example .env
-```
-
-Then edit `.env` and fill in the credentials from your team lead:
-
-```env
-GOOGLE_CLIENT_ID=<paste-here>
-GOOGLE_CLIENT_SECRET=<paste-here>
-GOOGLE_CALLBACK_URL=http://localhost:3000/auth/callback
-SESSION_SECRET=<any-random-string>     # e.g. openssl rand -hex 32
-```
-
-The other keys (`AUTH_PORT`, `CORS_ORIGIN`, `VITE_AUTH_URL`, `VITE_BACKEND_URL`) already have correct defaults — leave them alone unless you know you need to change them.
+PostgreSQL (dev only): database `risk_monitor`, user `dev_user`, password `dev_password`,
+host port `5433`.
 
 ---
 
-## 6. Running the Project
+## Launching on Linux
 
-### Option A — Full Docker (recommended)
+**Dependencies** (Download with your Distro dependency manager) :
 
-Brings up Postgres + auth server + backend + frontend with one command:
+- `openjdk-17-jdk`
+- Node.js 22 + npm
+- `docker` 
+- `docker-compose`
+- `git`
 
-```bash
-docker compose up --build
-```
 
-Then open `http://localhost:5173`.
-
-Stop everything:
-
-```bash
-docker compose down
-```
-
-### Option B — Hybrid (Postgres in Docker, app processes on host)
-
-Useful when you want a faster backend/frontend reload loop or to debug from IntelliJ.
-
-Start Postgres only:
-
+**Run properly**:
+Run the following either in seperate terminals (3 in total: backend+postgre, auth, frontend) or batch as one command and run:
 ```bash
 docker compose up -d postgres
+cd backend && ./mvnw -Dmaven.test.skip=true spring-boot:run
+cd auth-server && npm install && npm run dev
+cd frontend && npm install && npm run dev
 ```
 
-Backend (new terminal):
+**One-line run**:
+The following also works, but is worse when it comes to live sysmtem monitoring
+```bash
+docker compose up -d --build
+```
+
+**Stop**:
 
 ```bash
-cd backend
-./mvnw spring-boot:run            # Windows: mvnw.cmd spring-boot:run
+docker compose down; pkill -f spring-boot:run; pkill -f vite; pkill -f authServer
 ```
 
-Frontend (new terminal):
+---
 
+## Launch with Nix (SUPER AWESOME PERSON)
+
+If you have [Nix: the package manager](https://nixos.org/download/), a `shell.nix` ships two commands: `fresh` (clean build then launch) and
+`start` (just launch). They bring up Postgres, backend, auth server and frontend together.
+
+
+First time: wipe stale build output, reinstall, recompile, launch:
 ```bash
-cd frontend
-npm install
-npm run dev
+nix-shell --run fresh 
+nix-shell --run start
 ```
 
-Auth server (new terminal):
-
+Also, ff Nix has no nixpkgs channel configured, point it at one inline:
 ```bash
-cd auth-server
-npm install
-npm run dev                       # node --watch authServer.js
+nix-shell -I nixpkgs=channel:nixos-25.11 --run fresh
 ```
 
----
-
-## 7. URLs and Health Checks
-
-| What                  | URL                                                | Expected     |
-|-----------------------|----------------------------------------------------|--------------|
-| Frontend              | http://localhost:5173                              | UI loads     |
-| Backend health        | http://localhost:8081/api/health                   | `OK`         |
-| Auth server config    | http://localhost:3000/debug/config                 | JSON         |
-| Postgres              | `localhost:5433` (db `risk_monitor`)               | accepts conn |
-
-PostgreSQL credentials (dev only):
-
-- Database: `risk_monitor`
-- User: `dev_user`
-- Password: `dev_password`
-- Host port: `5433` (container exposes `5432` internally)
-
----
-
-## 8. Troubleshooting
-
-**`TokenError: Bad Request` when logging in**
-
-- Check `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `.env` are correct and have no trailing spaces.
-- Restart: `docker compose down && docker compose up -d`.
-
-**OAuth callback fails / redirect mismatch**
-
-- Verify `GOOGLE_CALLBACK_URL` in `.env` exactly matches an authorized redirect URI in Google Cloud Console.
-
-**CORS errors from the frontend**
-
-- Confirm `CORS_ORIGIN` in `.env` includes your frontend origin (`http://localhost:5173`).
-
-**Can't reach `localhost:5173`**
-
-- First build takes 10–15s. Tail logs: `docker compose logs -f frontend`.
-
-**Port already in use**
-
-- Another process is on 3000, 5173, 8081, or 5433. Stop it or change the host-port mapping in `docker-compose.yml`.
-
-**Backend can't reach Postgres**
-
-- Make sure the `postgres` service is healthy: `docker compose ps`. The backend container uses `postgres:5432` internally; the host uses `localhost:5433`.
-
----
-
-## 9. Implemented Features
-
-### Risk List
-
-Users can list, view, create, edit, and delete risks. Each risk has a category, logging frequency, unit of measurement, evaluation direction, and risk-level thresholds.
-
-- [x] ~~Backend `GET /api/risks` (list endpoint)~~
-- [x] ~~Frontend API methods (`listRisks`, `getRisk`, `createRisk`, `updateRisk`, `deleteRisk`)~~
-- [x] ~~`Risks.jsx` loads and displays the risk list~~
-- [x] ~~MUI table layout with clickable rows~~
-- [x] ~~Formatting helpers (`formatFrequency`, `formatDirection`, `formatThresholds`)~~
-- [x] ~~Read-only `RiskDetailsDialog` component~~
-- [x] ~~Row selection opens the details modal~~
-- [x] ~~List refreshes after creating a risk~~
-- [x] ~~Delete flow with confirmation~~
-- [x] ~~Edit flow (form dialog reused for create/edit)~~
-- [x] ~~`category` field on `Risk` entity, DTOs, and forms~~
-- [x] ~~Loading / empty / error states on the list page~~
-- [x] ~~Verified end-to-end (frontend lint+build, backend tests, manual flow)~~
-
----
-
-## 10. Security Notes
-
-- Never commit `.env` — it is gitignored for a reason.
-- Never share credentials over Slack, email, or git.
-- The shared OAuth credentials are **development only**.
-- Each developer has their own local Postgres instance in Docker — no shared dev DB.
+**Stop**: press `Ctrl-C` in that terminal.

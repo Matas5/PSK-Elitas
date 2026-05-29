@@ -180,7 +180,13 @@ function riskGradientStops(risk, domain) {
 }
 
 function buildRiskCsv(rows) {
-  const body = rows.map((p) => `"${new Date(p.time).toISOString()}","${p.value}",${p.level}`).join('\n');
+  // recorded-at in local time (not UTC) so the exported CSV reads in the viewer's zone
+  const fmt = (t) => {
+    const d = new Date(t);
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+  };
+  const body = rows.map((p) => `"${fmt(p.time)}","${p.value}",${p.level}`).join('\n');
   return `Recorded At,Value,Level\n${body}\n`;
 }
 
@@ -445,6 +451,12 @@ export default function RiskGraph() {
   }, [yDomain, yStep, customY, yScale.ticks]);
 
   const safeChartName = () => (risk?.name || 'risk-graph').replace(/[^a-z0-9-_]+/gi, '-');
+  // local-time stamp (matches the backend report naming) for saved chart files
+  const localStamp = () => {
+    const d = new Date();
+    const p = (n) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}-${p(d.getMinutes())}-${p(d.getSeconds())}`;
+  };
 
   const handleSave = async (kind) => {
     setSaveAnchor(null);
@@ -456,7 +468,7 @@ export default function RiskGraph() {
       } else {
         blob = await chartToPngBlob(chartRef.current);
       }
-      await uploadReport(activeTeamId, blob, `${safeChartName()}.${kind}`, kind);
+      await uploadReport(activeTeamId, blob, `${safeChartName()}-${localStamp()}.${kind}`, kind);
       showNotification(`Saved ${kind.toUpperCase()} to Downloads, get it there.`, 'success');
     } catch (err) {
       showNotification(err.message || 'Failed to save.', 'error');

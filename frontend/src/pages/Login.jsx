@@ -148,7 +148,7 @@ function LocalCard() {
 }
 
 function GoogleCard() {
-  const authUrl = import.meta.env.VITE_AUTH_URL;
+  const authUrl = import.meta.env.VITE_AUTH_URL || 'http://localhost:3000';
   return (
     <Stack spacing={2} alignItems="center" textAlign="center">
       <CardHeader subtitle="Sign in with your Google account to access Risk Monitor." />
