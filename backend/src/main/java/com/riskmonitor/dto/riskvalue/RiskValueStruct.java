@@ -39,7 +39,11 @@ public final class RiskValueStruct {
             BigDecimal value,
 
             @NotNull
-            Instant recordedAt
+            Instant recordedAt,
+
+            // client's last-seen version, checked for optimistic-lock conflicts on update
+            @NotNull
+            Long version
     ) {}
 
     public record Resp(

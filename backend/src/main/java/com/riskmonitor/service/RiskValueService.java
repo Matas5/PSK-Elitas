@@ -2,9 +2,11 @@ package com.riskmonitor.service;
 
 import com.riskmonitor.dto.riskvalue.RiskValueStruct.CreateBatchReq;
 import com.riskmonitor.dto.riskvalue.RiskValueStruct.EntryReq;
+import com.riskmonitor.dto.riskvalue.RiskValueStruct.Resp;
 import com.riskmonitor.dto.riskvalue.RiskValueStruct.UpdateReq;
 import com.riskmonitor.entity.Risk;
 import com.riskmonitor.entity.RiskValue;
+import com.riskmonitor.exception.OptimisticLockingConflictException;
 import com.riskmonitor.repository.RiskRepository;
 import com.riskmonitor.repository.RiskValueRepository;
 import lombok.RequiredArgsConstructor;
@@ -66,6 +68,12 @@ public class RiskValueService {
     @Transactional
     public RiskValue updateValue(UUID riskId, String userId, UUID valueId, UpdateReq request) {
         RiskValue riskValue = getValueForRisk(riskId, userId, valueId);
+        // optimistic locking: reject edits made against a stale version (same flow as RiskService)
+        if (!riskValue.getVersion().equals(request.version())) {
+            throw new OptimisticLockingConflictException(
+                    "Risk value " + valueId + " was modified by another user",
+                    valueId, riskValue.getVersion(), Resp.from(riskValue));
+        }
         validateWithinValidityWindow(riskValue.getRisk(), request.recordedAt(), 0);
         riskValue.update(request.value(), request.recordedAt());
         return riskValueRepository.save(riskValue);

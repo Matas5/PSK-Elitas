@@ -167,6 +167,7 @@ function EditRiskValueDialog({ entry, risk, onClose, onSaved }) {
       const updated = await updateRiskValue(risk.id, entry.id, {
         value: Number(form.value),
         recordedAt: new Date(form.recordedAt).toISOString(),
+        version: entry.version,
       });
       onSaved(updated);
       onClose();

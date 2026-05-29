@@ -1,9 +1,12 @@
 package com.riskmonitor.config;
 
+import java.util.UUID;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -40,6 +43,22 @@ public class GlobalExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
+    }
+
+    /**
+     * Handle the JPA/Hibernate flush-time optimistic lock failure. This is the real safety net:
+     * if two truly concurrent updates slip past the explicit version checks, the @Version bump
+     * fails at flush and we still answer 409 (reload) instead of letting it become a 500.
+     */
+    @ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+    public ResponseEntity<ConflictResponse<?>> handleJpaOptimisticLock(
+            ObjectOptimisticLockingFailureException ex
+    ) {
+        log.warn("JPA optimistic lock conflict: {}", ex.getMessage());
+        UUID id = (ex.getIdentifier() instanceof UUID u) ? u : null;
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(new ConflictResponse<>(
+                "This record was modified by another user. Please reload.",
+                "CONFLICT_VERSION_MISMATCH", id, null, null, null));
     }
 
     /**
