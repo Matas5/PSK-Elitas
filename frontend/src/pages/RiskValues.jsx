@@ -457,7 +457,7 @@ export default function RiskValues() {
         <Box>
           <Typography variant="h1" gutterBottom>Risk Values</Typography>
           <Typography variant="body2" color="text.secondary">
-            Select a risk in the active team to review, sort, edit, or delete its logged values.
+            Create, inspect, edit, delete, sort logged risk value points.
           </Typography>
         </Box>
         <Button

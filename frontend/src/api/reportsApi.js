@@ -36,9 +36,11 @@ export async function listReports(teamId) {
     return response.json();
 }
 
-export async function requestCsvReport(teamId) {
+export async function requestCsvReport(teamId, strategy) {
     if (!teamId) throw new Error("No active team selected");
-    const response = await fetch(`/api/reports/csv?teamId=${encodeURIComponent(teamId)}`, {
+    const params = new URLSearchParams({ teamId });
+    if (strategy) params.set("strategy", strategy);
+    const response = await fetch(`/api/reports/csv?${params.toString()}`, {
         method: "POST",
         headers: authHeaders(),
     });

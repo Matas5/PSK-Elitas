@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import AppBar from '@mui/material/AppBar';
 import Toolbar from '@mui/material/Toolbar';
 import Box from '@mui/material/Box';
+import Divider from '@mui/material/Divider';
 import Drawer from '@mui/material/Drawer';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
@@ -18,14 +19,26 @@ import InputLabel from '@mui/material/InputLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Select from '@mui/material/Select';
 
-import WarningAmberOutlinedIcon from '@mui/icons-material/WarningAmberOutlined';
-import TableRowsOutlinedIcon from '@mui/icons-material/TableRowsOutlined';
-import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
-import ShowChartOutlinedIcon from '@mui/icons-material/ShowChartOutlined';
-import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import LogoutOutlinedIcon from '@mui/icons-material/LogoutOutlined';
 import MenuIcon from '@mui/icons-material/Menu';
+
+// one import per variant so the style is switchable (see NAV_ICON_VARIANT)
+import Group from '@mui/icons-material/Group';
+import GroupOutlined from '@mui/icons-material/GroupOutlined';
+import GroupRounded from '@mui/icons-material/GroupRounded';
+import ReportProblem from '@mui/icons-material/ReportProblem';
+import ReportProblemOutlined from '@mui/icons-material/ReportProblemOutlined';
+import ReportProblemRounded from '@mui/icons-material/ReportProblemRounded';
+import QueryStats from '@mui/icons-material/QueryStats';
+import QueryStatsOutlined from '@mui/icons-material/QueryStatsOutlined';
+import QueryStatsRounded from '@mui/icons-material/QueryStatsRounded';
+import ShowChart from '@mui/icons-material/ShowChart';
+import ShowChartOutlined from '@mui/icons-material/ShowChartOutlined';
+import ShowChartRounded from '@mui/icons-material/ShowChartRounded';
+import FileDownload from '@mui/icons-material/FileDownload';
+import FileDownloadOutlined from '@mui/icons-material/FileDownloadOutlined';
+import FileDownloadRounded from '@mui/icons-material/FileDownloadRounded';
 
 import { useAuth } from '../auth/AuthContext';
 import { useNotification } from '../context/NotificationContext';
@@ -33,12 +46,28 @@ import { useTeam } from '../context/TeamContext';
 import { layout } from '../theme';
 import { ROUTES } from '../routes';
 
+// sidebar icon style: 'filled' | 'outlined' | 'rounded'
+const NAV_ICON_VARIANT = 'rounded';
+
+const NAV_ICON_SETS = {
+  teams: { filled: Group, outlined: GroupOutlined, rounded: GroupRounded },
+  risks: { filled: ReportProblem, outlined: ReportProblemOutlined, rounded: ReportProblemRounded },
+  riskValues: { filled: QueryStats, outlined: QueryStatsOutlined, rounded: QueryStatsRounded },
+  graphs: { filled: ShowChart, outlined: ShowChartOutlined, rounded: ShowChartRounded },
+  downloads: { filled: FileDownload, outlined: FileDownloadOutlined, rounded: FileDownloadRounded },
+};
+
+function navIcon(key) {
+  const Icon = NAV_ICON_SETS[key][NAV_ICON_VARIANT] || NAV_ICON_SETS[key].rounded;
+  return <Icon />;
+}
+
 const PRIMARY_NAV = [
-  { to: ROUTES.TEAMS, label: 'Teams', icon: <GroupsOutlinedIcon /> },
-  { to: ROUTES.RISKS, label: 'Risks', icon: <WarningAmberOutlinedIcon /> },
-  { to: ROUTES.RISK_VALUES, label: 'Risk Values', icon: <TableRowsOutlinedIcon /> },
-  { to: ROUTES.RISK_GRAPHS, label: 'Risk Graphs', icon: <ShowChartOutlinedIcon /> },
-  { to: ROUTES.DOWNLOADS, label: 'Downloads', icon: <AssessmentOutlinedIcon /> },
+  { to: ROUTES.TEAMS, label: 'Teams', icon: navIcon('teams') },
+  { to: ROUTES.RISKS, label: 'Risks', icon: navIcon('risks') },
+  { to: ROUTES.RISK_GRAPHS, label: 'Risk Graphs', icon: navIcon('graphs') },
+  { to: ROUTES.RISK_VALUES, label: 'Risk Values', icon: navIcon('riskValues') },
+  { to: ROUTES.DOWNLOADS, label: 'Downloads', icon: navIcon('downloads') },
 ];
 
 const HOST_ORG = import.meta.env.VITE_HOST_ORG || 'Bulvinuk.ai Limited.';
@@ -177,11 +206,13 @@ function DrawerContent({ user, onLogout, onNavigate }) {
         </FormControl>
       </Box>
 
+      <Divider sx={{ borderColor: 'sidebar.border' }} />
       <List sx={{ px: 1.5, py: 1.5, flexGrow: 1 }}>
         {PRIMARY_NAV.map((item) => (
           <NavListItem key={item.to} {...item} onNavigate={onNavigate} />
         ))}
       </List>
+      <Divider sx={{ borderColor: 'sidebar.border' }} />
 
       <Box sx={{ px: 2, py: 2 }}>
         <Box
@@ -264,9 +295,11 @@ function DrawerContent({ user, onLogout, onNavigate }) {
             justifyContent: 'flex-start',
             color: 'sidebar.text',
             borderColor: 'sidebar.border',
+            // signing out is destructive, so the hover leans red
             '&:hover': {
-              bgcolor: 'sidebar.hover',
-              borderColor: 'sidebar.activeAccent',
+              bgcolor: 'rgba(211, 47, 47, 0.08)',
+              borderColor: 'error.main',
+              color: 'error.main',
             },
           }}
         >

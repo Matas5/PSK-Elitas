@@ -38,8 +38,10 @@ public class ReportController {
 
     // returns 202 immediately; the CSV is built on an async thread, the page polls for READY
     @PostMapping("/csv")
-    public ResponseEntity<ReportResp> generateCsv(@RequestParam UUID teamId, @CurrentUserId String userId) {
-        Report report = reportService.requestCsv(userId, teamId);
+    public ResponseEntity<ReportResp> generateCsv(@RequestParam UUID teamId,
+                                                  @RequestParam(required = false) String strategy,
+                                                  @CurrentUserId String userId) {
+        Report report = reportService.requestCsv(userId, teamId, strategy);
         return ResponseEntity.status(HttpStatus.ACCEPTED).body(ReportResp.from(report));
     }
 

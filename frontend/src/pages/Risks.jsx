@@ -4,12 +4,15 @@ import { Link as RouterLink, useNavigate } from 'react-router-dom';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import ButtonGroup from '@mui/material/ButtonGroup';
 import CircularProgress from '@mui/material/CircularProgress';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
@@ -22,8 +25,11 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
 import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 
 import { deleteRisk, getSortStrategy, listRisks, setSortStrategy } from '../api/risksApi';
+import { requestCsvReport } from '../api/reportsApi';
 import CreateRiskDialog from '../components/CreateRiskDialog';
 import LogRiskValueDialog from '../components/LogRiskValueDialog';
 import RiskDetailsDialog from '../components/RiskDetailsDialog';
@@ -58,6 +64,8 @@ export default function Risks() {
   const [strategy, setStrategy] = useState('');
   const [strategies, setStrategies] = useState([]);
   const [switching, setSwitching] = useState(false);
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportMenuAnchor, setReportMenuAnchor] = useState(null);
   const { showNotification } = useNotification();
   const { activeTeam } = useTeam();
   const navigate = useNavigate();
@@ -115,6 +123,21 @@ export default function Risks() {
       showNotification(err.message || 'Failed to switch ranking strategy.', 'error');
     } finally {
       setSwitching(false);
+    }
+  };
+
+  // ranked summary export, defers to Downloads. plain click uses the active strategy,
+  // the dropdown picks a specific one.
+  const handleExportReport = async (strategyName) => {
+    setReportMenuAnchor(null);
+    setReportBusy(true);
+    try {
+      await requestCsvReport(activeTeamId, strategyName);
+      showNotification('Report is generating, find it in Downloads shortly.', 'info');
+    } catch (err) {
+      showNotification(err.message || 'Failed to start report.', 'error');
+    } finally {
+      setReportBusy(false);
     }
   };
 
@@ -192,17 +215,58 @@ export default function Risks() {
         <Box>
           <Typography variant="h1" gutterBottom>Risks</Typography>
           <Typography variant="body2" color="text.secondary">
-            Review created risks and choose which ones to inspect, edit, or delete.
+            Create, inspect, edit or delete risks.
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AddOutlinedIcon />}
-          onClick={() => setCreateOpen(true)}
-          disabled={!activeTeam}
-        >
-          Create risk
-        </Button>
+        <Stack direction="row" spacing={1.5} alignItems="center" flexWrap="wrap" useFlexGap>
+          {strategies.length > 1 ? (
+            <>
+              <ButtonGroup variant="outlined" disabled={!activeTeam || risks.length === 0 || reportBusy}>
+                <Button
+                  startIcon={<AssessmentOutlinedIcon />}
+                  onClick={() => handleExportReport(strategy)}
+                >
+                  {reportBusy ? 'Generating…' : 'Risk report summary'}
+                </Button>
+                <Button
+                  size="small"
+                  aria-label="Choose ranking for the report"
+                  onClick={(e) => setReportMenuAnchor(e.currentTarget)}
+                >
+                  <ArrowDropDownIcon />
+                </Button>
+              </ButtonGroup>
+              <Menu
+                anchorEl={reportMenuAnchor}
+                open={Boolean(reportMenuAnchor)}
+                onClose={() => setReportMenuAnchor(null)}
+              >
+                {strategies.map((name) => (
+                  <MenuItem key={name} onClick={() => handleExportReport(name)}>
+                    {STRATEGY_LABELS[name] || name}
+                  </MenuItem>
+                ))}
+              </Menu>
+            </>
+          ) : (
+            <Button
+              variant="outlined"
+              startIcon={<AssessmentOutlinedIcon />}
+              onClick={() => handleExportReport(strategy)}
+              disabled={!activeTeam || risks.length === 0 || reportBusy}
+            >
+              {reportBusy ? 'Generating…' : 'Risk report summary'}
+            </Button>
+          )}
+          <Button
+            variant="contained"
+            startIcon={<AddOutlinedIcon />}
+            onClick={() => setCreateOpen(true)}
+            disabled={!activeTeam}
+          >
+            Create risk
+          </Button>
+        </Stack>
       </Stack>
 
       {activeTeam && !loading && !loadError && risks.length > 0 && (

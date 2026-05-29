@@ -20,9 +20,12 @@ import TextField from '@mui/material/TextField';
 import MuiTooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
+import CloseIcon from '@mui/icons-material/Close';
 import RefreshIcon from '@mui/icons-material/Refresh';
 import {
   Area,
+  CartesianGrid,
   ComposedChart,
   LabelList,
   Line,
@@ -54,6 +57,14 @@ import { tokens } from '../theme/tokens';
 const PICKER_VIEWS_WITH_SECONDS = ['year', 'month', 'day', 'hours', 'minutes', 'seconds'];
 const PICKER_VIEWS = ['year', 'month', 'day', 'hours', 'minutes'];
 
+// checked toggles show an X inside the box instead of a tick
+const X_MARK = (
+  <Box sx={{ position: 'relative', display: 'inline-flex' }}>
+    <CheckBoxOutlineBlankIcon fontSize="small" />
+    <CloseIcon sx={{ position: 'absolute', inset: 0, m: 'auto', fontSize: 14 }} />
+  </Box>
+);
+
 function pickerToInputString(d, withSeconds) {
   if (!d) return '';
   return withSeconds ? d.format('YYYY-MM-DDTHH:mm:ss') : d.format('YYYY-MM-DDTHH:mm');
@@ -81,8 +92,11 @@ function niceScale(min, max, targetTicks = 8) {
   const f = roughStep / Math.pow(10, exp);
   const nf = f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10;
   const step = nf * Math.pow(10, exp);
-  const niceMin = Math.floor(min / step) * step;
-  const niceMax = Math.ceil(max / step) * step;
+  let niceMin = Math.floor(min / step) * step;
+  let niceMax = Math.ceil(max / step) * step;
+  // headroom when data sits exactly on a bound, else edge dots/labels get clipped
+  if (min === niceMin) niceMin -= step;
+  if (max === niceMax) niceMax += step;
   const ticks = [];
   for (let v = niceMin; v <= niceMax + step / 2; v += step) {
     ticks.push(Math.round(v * 1e6) / 1e6);
@@ -136,13 +150,32 @@ function riskGradientStops(risk, domain) {
   if (bands.length === 0) return [];
   const [min, max] = domain;
   const span = max - min || 1;
-  const offsetOf = (y) => clamp01((max - y) / span); // 0 at top (max), 1 at bottom (min)
-  const stops = bands.map((b) => ({
-    offset: offsetOf((b.y1 + b.y2) / 2),
-    color: RISK_LEVELS[b.level].color,
-  }));
-  stops.push({ offset: 0, color: RISK_LEVELS[bands[bands.length - 1].level].color });
-  stops.push({ offset: 1, color: RISK_LEVELS[bands[0].level].color });
+  const offsetOf = (y) => clamp01((max - y) / span); // 0 = top (max), 1 = bottom (min)
+  const rank = { LOW: 0, MEDIUM: 1, HIGH: 2 };
+  const feather = 0.15; // how much of the axis a cross-line blend spreads over
+  // each zone holds its colour; the blend sits on the calmer side of each line, so green
+  // stays below the medium line and red stays above the high line
+  const stops = [
+    { offset: 1, color: RISK_LEVELS[bands[0].level].color },
+    { offset: 0, color: RISK_LEVELS[bands[bands.length - 1].level].color },
+  ];
+  for (let i = 0; i < bands.length - 1; i += 1) {
+    const lo = bands[i];
+    const hi = bands[i + 1];
+    if (lo.level === hi.level) continue;
+    const o = offsetOf(lo.y2);
+    const cLo = RISK_LEVELS[lo.level].color;
+    const cHi = RISK_LEVELS[hi.level].color;
+    if (Math.abs(rank[lo.level] - 1) <= Math.abs(rank[hi.level] - 1)) {
+      // lower zone is the calmer one: hold it to the line, ramp up just above
+      stops.push({ offset: o, color: cLo });
+      stops.push({ offset: clamp01(o - feather), color: cHi });
+    } else {
+      // upper zone is calmer: hold the lower colour below, ramp up to the line
+      stops.push({ offset: clamp01(o + feather), color: cLo });
+      stops.push({ offset: o, color: cHi });
+    }
+  }
   return stops.sort((a, b) => a.offset - b.offset);
 }
 
@@ -257,6 +290,9 @@ export default function RiskGraph() {
   const [showPoints, setShowPoints] = useState(true);
   const [showArea, setShowArea] = useState(true);
   const [showThresholds, setShowThresholds] = useState(true);
+  const [showGrid, setShowGrid] = useState(true);
+  const [showXLabel, setShowXLabel] = useState(true);
+  const [showYLabel, setShowYLabel] = useState(true);
   const [yMin, setYMin] = useState('');
   const [yMax, setYMax] = useState('');
   const [yStep, setYStep] = useState('');
@@ -447,7 +483,7 @@ export default function RiskGraph() {
         <Box>
           <Typography variant="h1" gutterBottom>Risk Graphs</Typography>
           <Typography variant="body2" color="text.secondary">
-            Select a risk in the active team to view its logged values as a threshold-aware graph.
+            Pick a risk and see its graph.
           </Typography>
         </Box>
       </Stack>
@@ -586,20 +622,24 @@ export default function RiskGraph() {
               useFlexGap
             >
               <FormControlLabel
-                control={<Checkbox size="small" checked={showLine} onChange={(e) => setShowLine(e.target.checked)} />}
+                control={<Checkbox size="small" checkedIcon={X_MARK} checked={showLine} onChange={(e) => setShowLine(e.target.checked)} />}
                 label="Line"
               />
               <FormControlLabel
-                control={<Checkbox size="small" checked={showPoints} onChange={(e) => setShowPoints(e.target.checked)} />}
+                control={<Checkbox size="small" checkedIcon={X_MARK} checked={showPoints} onChange={(e) => setShowPoints(e.target.checked)} />}
                 label="Points"
               />
               <FormControlLabel
-                control={<Checkbox size="small" checked={showArea} onChange={(e) => setShowArea(e.target.checked)} />}
+                control={<Checkbox size="small" checkedIcon={X_MARK} checked={showArea} onChange={(e) => setShowArea(e.target.checked)} />}
                 label="Area"
               />
               <FormControlLabel
-                control={<Checkbox size="small" checked={showThresholds} onChange={(e) => setShowThresholds(e.target.checked)} />}
+                control={<Checkbox size="small" checkedIcon={X_MARK} checked={showThresholds} onChange={(e) => setShowThresholds(e.target.checked)} />}
                 label="Thresholds"
+              />
+              <FormControlLabel
+                control={<Checkbox size="small" checkedIcon={X_MARK} checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} />}
+                label="Grid"
               />
               <TextField
                 label="Y min" type="number" size="small"
@@ -613,6 +653,8 @@ export default function RiskGraph() {
               />
               <TextField
                 label="Y step" type="number" size="small"
+                placeholder="Default"
+                InputLabelProps={{ shrink: true }}
                 value={yStep} onChange={(e) => setYStep(e.target.value)}
                 sx={{ width: 100 }}
               />
@@ -643,11 +685,19 @@ export default function RiskGraph() {
                         ))}
                       </linearGradient>
                     </defs>
+                    {showGrid && (
+                      <CartesianGrid strokeDasharray="3 3" stroke={tokens.neutral.border} />
+                    )}
                     <XAxis
                       dataKey="time" type="number" scale="time"
                       domain={['dataMin', 'dataMax']}
                       tickFormatter={(t) => formatTick(t, needsSeconds(risk), locale)}
                       tick={{ fontSize: 12 }} tickMargin={8}
+                      height={showXLabel ? 52 : 30}
+                      label={showXLabel ? {
+                        value: 'Time', position: 'insideBottom', offset: 0,
+                        style: { textAnchor: 'middle', fontSize: 15, fontWeight: 700, fill: '#424242' },
+                      } : undefined}
                     />
                     <YAxis
                       domain={yDomain}
@@ -655,10 +705,10 @@ export default function RiskGraph() {
                       allowDataOverflow={Boolean(customY) || Boolean(yTicks)}
                       width={80}
                       tick={{ fontSize: 12 }} tickMargin={8}
-                      label={{
+                      label={showYLabel ? {
                         value: risk.measurementUnit, angle: -90, position: 'insideLeft', offset: 0,
                         style: { textAnchor: 'middle', fontSize: 15, fontWeight: 700, fill: '#424242' },
-                      }}
+                      } : undefined}
                     />
                     {showArea && areaStops.length > 0 && (
                       <Area
@@ -678,11 +728,12 @@ export default function RiskGraph() {
                         key={`${t.level}-${t.y}`}
                         y={t.y}
                         stroke={RISK_LEVELS[t.level].color}
-                        strokeWidth={2.25}
-                        strokeDasharray="8 5"
+                        strokeWidth={1.75}
+                        strokeOpacity={0.4}
+                        strokeDasharray="6 6"
                         label={{
                           value: t.y, position: 'right',
-                          fill: RISK_LEVELS[t.level].color, fontSize: 12, fontWeight: 700,
+                          fill: RISK_LEVELS[t.level].color, fillOpacity: 0.7, fontSize: 12, fontWeight: 700,
                         }}
                       />
                     ))}
@@ -700,6 +751,17 @@ export default function RiskGraph() {
                 </ResponsiveContainer>
               </Box>
             )}
+
+            <Stack direction="row" spacing={2} sx={{ mt: 2, flexWrap: 'wrap' }} alignItems="center">
+              <FormControlLabel
+                control={<Checkbox size="small" checkedIcon={X_MARK} checked={showXLabel} onChange={(e) => setShowXLabel(e.target.checked)} />}
+                label="X axis label"
+              />
+              <FormControlLabel
+                control={<Checkbox size="small" checkedIcon={X_MARK} checked={showYLabel} onChange={(e) => setShowYLabel(e.target.checked)} />}
+                label="Y axis label"
+              />
+            </Stack>
 
             <Stack direction="row" spacing={2.5} sx={{ mt: 3, flexWrap: 'wrap' }}>
               {Object.entries(RISK_LEVELS).map(([key, level]) => (

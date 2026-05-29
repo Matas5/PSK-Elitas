@@ -14,10 +14,8 @@ function readStoredUser() {
   }
 }
 
-// keep localStorage in lockstep with the user *synchronously*. the api helpers
-// read auth_user straight from localStorage, and react runs child effects
-// (TeamContext's load) before this provider's effects, so a post-render effect
-// would let those fetches see a stale/empty user when swapping logins.
+// write auth_user synchronously, not via an effect: the api helpers read it straight from
+// localStorage and child effects fire first, so on a login swap they'd read a stale user.
 function persistUser(nextUser) {
   if (nextUser) {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextUser));

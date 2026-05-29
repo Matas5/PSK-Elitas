@@ -16,7 +16,6 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
-import AssessmentOutlinedIcon from '@mui/icons-material/AssessmentOutlined';
 import DownloadOutlinedIcon from '@mui/icons-material/DownloadOutlined';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 
@@ -24,7 +23,6 @@ import {
   deleteReport,
   downloadReport,
   listReports,
-  requestCsvReport,
 } from '../api/reportsApi';
 import { useNotification } from '../context/NotificationContext';
 import { useLocale } from '../context/LocaleContext.jsx';
@@ -43,7 +41,6 @@ export default function Reports() {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState(null);
-  const [generating, setGenerating] = useState(false);
   const { showNotification } = useNotification();
   const { locale } = useLocale();
   const { activeTeam } = useTeam();
@@ -76,19 +73,6 @@ export default function Reports() {
     const timer = setInterval(loadReports, 2000);
     return () => clearInterval(timer);
   }, [reports, activeTeamId, loadReports]);
-
-  const handleGenerate = async () => {
-    setGenerating(true);
-    try {
-      await requestCsvReport(activeTeamId);
-      showNotification('Report is generating, it will appear below shortly.', 'info');
-      await loadReports();
-    } catch (err) {
-      showNotification(err.message || 'Failed to start report.', 'error');
-    } finally {
-      setGenerating(false);
-    }
-  };
 
   const handleDownload = async (report) => {
     try {
@@ -125,18 +109,9 @@ export default function Reports() {
         <Box>
           <Typography variant="h1" gutterBottom>Downloads</Typography>
           <Typography variant="body2" color="text.secondary">
-            Generate exports of your team&apos;s risk data and download them. Charts and CSVs saved
-            from the graph view also show up here.
+            Backlog of downloaded .png, .csv files relating to risk information get defered here (Team specific)
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<AssessmentOutlinedIcon />}
-          onClick={handleGenerate}
-          disabled={!activeTeam || generating}
-        >
-          {generating ? 'Starting…' : 'Generate All Risks CSV Report'}
-        </Button>
       </Stack>
 
       {!activeTeam && (

@@ -29,12 +29,12 @@ public class ReportService {
 
     // save the PENDING row first so it's committed before we fire the async job,
     // otherwise the worker could look it up before it exists. that's why this isn't @Transactional.
-    public Report requestCsv(String userId, UUID teamId) {
+    public Report requestCsv(String userId, UUID teamId, String strategyName) {
         teamService.assertUserIsTeamMember(teamId, userId);
         String fileName = "risk-report-" + STAMP.format(Instant.now()) + ".csv";
         Report report = reportRepository.save(
                 new Report(userId, teamId, fileName, "text/csv", ReportType.RISK_CSV, ReportStatus.PENDING));
-        reportGenerator.generateCsvAsync(report.getId());
+        reportGenerator.generateCsvAsync(report.getId(), strategyName);
         return report;
     }
 

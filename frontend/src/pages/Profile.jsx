@@ -38,6 +38,7 @@ export default function Profile() {
   const displayName = user?.username || user?.displayName || 'User';
   const providerLabel = provider ? provider.toUpperCase() : null;
   const datePreview = locale === 'lt' ? '2026-05-28 14:30' : '5/28/2026, 2:30 PM';
+  const dateStyleLabel = locale === 'lt' ? 'ISO 8601 Style' : 'US Style';
 
   return (
     <Box>
@@ -85,12 +86,12 @@ export default function Profile() {
                     value={locale}
                     onChange={(e) => setLocale(e.target.value)}
                   >
-                    <MenuItem value="lt">Lithuanian (lt)</MenuItem>
-                    <MenuItem value="en">English (US, en)</MenuItem>
+                    <MenuItem value="lt">YYYY-mm-dd HH:MM</MenuItem>
+                    <MenuItem value="en">mm/dd/yyyy HH:MM (AM/PM)</MenuItem>
                   </Select>
                 </FormControl>
                 <Typography variant="caption" color="text.secondary">
-                  {datePreview}
+                  {dateStyleLabel}, i.e {datePreview}
                 </Typography>
               </Stack>
             </Stack>
