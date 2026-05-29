@@ -7,7 +7,6 @@
 
 # Getting started 
 
-
 ## Launch with VS Code (Dev Container)
 
 You need: Docker Desktop, VS Code, and the **Dev Containers** extension inside of Visual Studio Code.
@@ -99,9 +98,4 @@ First time: wipe stale build output, reinstall, recompile, launch:
 ```bash
 nix-shell --run fresh 
 nix-shell --run start
-```
-
-Also, ff Nix has no nixpkgs channel configured, point it at one inline:
-```bash
-nix-shell -I nixpkgs=channel:nixos-25.11 --run fresh
 ```
