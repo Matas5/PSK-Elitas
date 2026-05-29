@@ -226,7 +226,7 @@ export default function Risks() {
                   startIcon={<AssessmentOutlinedIcon />}
                   onClick={() => handleExportReport(strategy)}
                 >
-                  {reportBusy ? 'Generating…' : 'Risk report summary'}
+                  {reportBusy ? 'Generating...' : 'Risk report summary'}
                 </Button>
                 <Button
                   size="small"
@@ -255,7 +255,7 @@ export default function Risks() {
               onClick={() => handleExportReport(strategy)}
               disabled={!activeTeam || risks.length === 0 || reportBusy}
             >
-              {reportBusy ? 'Generating…' : 'Risk report summary'}
+              {reportBusy ? 'Generating...' : 'Risk report summary'}
             </Button>
           )}
           <Button
@@ -459,7 +459,7 @@ export default function Risks() {
             onClick={handleConfirmDelete}
             disabled={deleting}
           >
-            {deleting ? 'Deleting…' : 'Delete'}
+            {deleting ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>
       </Dialog>

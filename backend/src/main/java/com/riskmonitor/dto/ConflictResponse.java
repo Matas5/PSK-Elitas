@@ -3,10 +3,7 @@ package com.riskmonitor.dto;
 import java.io.Serializable;
 import java.util.UUID;
 
-/**
- * Response returned when an optimistic locking conflict occurs (HTTP 409 Conflict).
- * Contains the current server version of the data so user can decide how to proceed.
- */
+// 409 body for a version conflict: carries the current server version + data so the client can reload or overwrite
 public record ConflictResponse<T>(
         String message,
         String error,

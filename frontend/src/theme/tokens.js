@@ -46,10 +46,10 @@ const risk = {
 // risk-list row indicator: bright shape on a dark square tile so it pops.
 // brighter than the `risk` colours above, which stay for the graph/chips.
 const riskIndicator = {
-  tile: '#161E2A', // dark navy tile
-  low: { shape: '#2EE57F' }, // mint green
-  medium: { shape: '#FFC400' }, // construction yellow
-  high: { shape: '#E11D48' }, // magenta red
+  tile: '#161E2A',
+  low: { shape: '#2EE57F' },
+  medium: { shape: '#FFC400' },
+  high: { shape: '#E11D48' },
 };
 
 const effects = {

@@ -11,10 +11,7 @@ import Divider from '@mui/material/Divider';
 
 import { useLocale } from '../context/LocaleContext.jsx';
 
-/**
- * Dialog shown when an optimistic locking conflict occurs.
- * Allows user to choose how to resolve the conflict.
- */
+// shown on a version conflict: lets the user reload, overwrite, or cancel
 export default function ConflictDialog({
   open,
   resourceName,
@@ -80,7 +77,7 @@ export default function ConflictDialog({
                     Category
                   </Typography>
                   <Typography variant="body2">
-                    {serverData.category || '—'}
+                    {serverData.category || '-'}
                   </Typography>
                 </Box>
                 <Box>
@@ -88,7 +85,7 @@ export default function ConflictDialog({
                     Description
                   </Typography>
                   <Typography variant="body2">
-                    {serverData.description || '—'}
+                    {serverData.description || '-'}
                   </Typography>
                 </Box>
                 <Divider />

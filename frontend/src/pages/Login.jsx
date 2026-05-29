@@ -132,7 +132,7 @@ function LocalCard() {
         disabled={submitting}
         sx={{ textTransform: 'none', fontSize: '1rem', fontWeight: 500 }}
       >
-        {submitting ? 'Signing in…' : 'Sign in'}
+        {submitting ? 'Signing in...' : 'Sign in'}
       </Button>
       <Typography variant="body2" color="text.secondary" textAlign="center">
         <Link

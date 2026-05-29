@@ -676,7 +676,7 @@ export default function RiskGraph() {
                 onClick={(e) => setSaveAnchor(e.currentTarget)}
                 disabled={chartData.length === 0 || savingChart}
               >
-                {savingChart ? 'Saving…' : 'Save for download as...'}
+                {savingChart ? 'Saving...' : 'Save for download as...'}
               </Button>
               <Menu anchorEl={saveAnchor} open={Boolean(saveAnchor)} onClose={() => setSaveAnchor(null)}>
                 <MenuItem onClick={() => handleSave('csv')}>Save as CSV</MenuItem>

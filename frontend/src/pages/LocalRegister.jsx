@@ -115,7 +115,7 @@ export default function LocalRegister() {
               disabled={submitting}
               sx={{ textTransform: 'none', fontSize: '1rem', fontWeight: 500 }}
             >
-              {submitting ? 'Registering account…' : 'Register account'}
+              {submitting ? 'Registering account...' : 'Register account'}
             </Button>
             <Typography variant="body2" color="text.secondary" textAlign="center">
               <Link

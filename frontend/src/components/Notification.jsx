@@ -49,14 +49,3 @@ export default function Notification() {
     </Snackbar>
   );
 }
-
-// How to use the notification system anywhere:
-// import { useNotification } from '../context/NotificationContext';
-
-// const { showNotification } = useNotification();
-
-// // Show notifications
-// showNotification('Success message', 'success');  // green
-// showNotification('Error message', 'error');      // red
-// showNotification('Info message', 'info');        // blue
-// showNotification('Warning message', 'warning');  // orange
