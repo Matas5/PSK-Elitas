@@ -56,6 +56,39 @@ public RiskResp updateRisk(UUID id, RiskUpdateReq req, String userId) {
 - [backend/src/main/java/com/riskmonitor/dto/risk/RiskStruct.java](backend/src/main/java/com/riskmonitor/dto/risk/RiskStruct.java) - `RiskUpdateReq` includes `@NotNull Long version`
 - [backend/src/main/java/com/riskmonitor/dto/risk/RiskStruct.java](backend/src/main/java/com/riskmonitor/dto/risk/RiskStruct.java) - `RiskResp` returns `Long version`
 
+### Backend: Same Check For Risk Values
+**File:** [backend/src/main/java/com/riskmonitor/service/RiskValueService.java](backend/src/main/java/com/riskmonitor/service/RiskValueService.java)
+
+```java
+public RiskValue updateValue(UUID riskId, String userId, UUID valueId, UpdateReq request) {
+    RiskValue riskValue = getValueForRisk(riskId, userId, valueId);
+    if (!riskValue.getVersion().equals(request.version())) {
+        throw new OptimisticLockingConflictException(
+                "Risk value " + valueId + " was modified by another user",
+                valueId, riskValue.getVersion(), Resp.from(riskValue));
+    }
+    // ... safe to update ...
+}
+```
+
+**How it works:** logged values use the same version check as risks. `UpdateReq` carries the client's last-seen `version`; on mismatch the same 409 conflict flow runs, so a stale edit is detected instead of silently overwriting.
+
+### Backend: Flush-time Safety Net (409, not 500)
+**File:** [backend/src/main/java/com/riskmonitor/config/GlobalExceptionHandler.java](backend/src/main/java/com/riskmonitor/config/GlobalExceptionHandler.java)
+
+```java
+@ExceptionHandler(ObjectOptimisticLockingFailureException.class)
+public ResponseEntity<ConflictResponse<?>> handleJpaOptimisticLock(
+        ObjectOptimisticLockingFailureException ex) {
+    UUID id = (ex.getIdentifier() instanceof UUID u) ? u : null;
+    return ResponseEntity.status(HttpStatus.CONFLICT).body(new ConflictResponse<>(
+            "This record was modified by another user. Please reload.",
+            "CONFLICT_VERSION_MISMATCH", id, null, null, null));
+}
+```
+
+**How it works:** if two truly concurrent updates slip past the explicit version checks, Hibernate's `@Version` bump fails at flush. This handler maps that to HTTP 409 (reload) instead of letting it surface as a 500, for both `Risk` and `RiskValue`.
+
 ---
 
 ## User Sees Conflict Dialog

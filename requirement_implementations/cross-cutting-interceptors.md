@@ -68,6 +68,36 @@ public class AopConfig {
 
 ---
 
+## Real User In The Audit Log
+
+### Per-request Authentication Filter
+**File:** [backend/src/main/java/com/riskmonitor/web/CurrentUserAuthFilter.java](backend/src/main/java/com/riskmonitor/web/CurrentUserAuthFilter.java)
+
+```java
+@Component
+public class CurrentUserAuthFilter extends OncePerRequestFilter {
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response,
+                                    FilterChain filterChain) throws ServletException, IOException {
+        String userId = request.getHeader("X-User-Id");
+        if (userId != null && !userId.isBlank()) {
+            var auth = new UsernamePasswordAuthenticationToken(
+                    userId, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+            SecurityContextHolder.getContext().setAuthentication(auth);
+        }
+        try {
+            filterChain.doFilter(request, response);
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+}
+```
+
+**How it works:** the aspect reads the user and authorities from `SecurityContextHolder`. This filter puts the per-request `X-User-Id` there before the controller runs, so the audit log records the real user id (and a `ROLE_USER` authority) instead of the anonymous token. The context is cleared after each request so a pooled thread never carries the previous user. The app has no global role model, so authorities are the coarse `ROLE_USER`; per-team roles (OWNER/MEMBER) are enforced separately in `TeamService`.
+
+---
+
 ## Enable / Disable Without Changing Business Code
 
 ### Application Properties
@@ -103,11 +133,11 @@ risk-monitor.audit.enabled=true
 **File:** [backend/logs/business-operations.log](backend/logs/business-operations.log)
 
 ```text
-BUSINESS_OPERATION_START user='anonymousUser' authorities='ROLE_ANONYMOUS' time='2026-05-25T17:28:56Z' method='com.riskmonitor.service.RiskService.createRisk'
-BUSINESS_OPERATION_SUCCESS user='anonymousUser' authorities='ROLE_ANONYMOUS' time='2026-05-25T17:28:56Z' method='com.riskmonitor.service.RiskService.createRisk'
+BUSINESS_OPERATION_START user='b3f1c2a4-...' authorities='ROLE_USER' time='2026-05-29T10:12:03Z' method='com.riskmonitor.service.RiskService.createRisk'
+BUSINESS_OPERATION_SUCCESS user='b3f1c2a4-...' authorities='ROLE_USER' time='2026-05-29T10:12:03Z' method='com.riskmonitor.service.RiskService.createRisk'
 ```
 
-**How it works:** Creating a risk triggers `RiskService.createRisk`, and the aspect logs both start and successful completion.
+**How it works:** Creating a risk triggers `RiskService.createRisk`, and the aspect logs both start and successful completion. The `user` is the real `X-User-Id` placed in the security context by `CurrentUserAuthFilter`.
 
 ---
 
