@@ -25,19 +25,12 @@ sign-in will not. `.env` is gitignored, so it never ships in the repo; get the s
 | Auth server | http://localhost:3000   | `auth-server/`       |
 | PostgreSQL  | localhost:5433          | `docker-compose.yml` |
 
-Open **http://localhost:5173** (use `localhost`, **not 127.0.0.1**) and log in with a seeded account: **`demo` / `demo1234`** or **`demo_employee` / `demo1234`** or your own Google account (if you have .env setup for it.)
-
-
 ---
 
 ## Launch with VS Code (Dev Container)
 
-A cross-platform alternative (works on Windows, macOS, Linux). You only need **VS Code**, its
-**Dev Containers** extension, and **Docker**.
-
 1. Open the project folder in VS Code.
-2. Run **"Dev Containers: Reopen in Container"** (it uses `.devcontainer/`). VS Code builds a
-   Linux environment with Java 17, Node 22 and Docker, and installs the npm dependencies.
+2. Run **"Dev Containers: Reopen in Container"** 
 3. In the VS Code terminal run the launcher:
 
    ```bash
