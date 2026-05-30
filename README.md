@@ -14,15 +14,22 @@ You need: Docker Desktop, VS Code, and the **Dev Containers** extension inside o
 1. Start Docker Desktop (wait until it says the engine is running).
 2. Open the project folder in VS Code.
 3. `Ctrl+Shift+P` -> **">Dev Containers: Reopen in Container"**. (Note: first build might take a little while :< )
-4. Open a terminal in the container  and launch everything:
+4. Create a `.env` file and have it be a carbon copy of the `.env.example` file. User specific modification (How to get Google Auth running will be discussed below). 
+5. Open a terminal in the container  and launch everything:
 
    ```bash
    bash .devcontainer/launch.sh
    ```
 
    This brings up all the stuff.
-5. When VS Code says port 5173 is forwarded, open **http://localhost:5173** and you are ready to login.
+6. When VS Code says port 5173 is forwarded, open **http://localhost:5173** and you are ready to login.
 
+## Google Auth
+> [!warning]
+> !!! DISCLAIMER !!! 
+> You have to produce GOOGLE_CLIENT_SECRET, GOOGLE_CLIENT_ID, SESSION_SECRET yourself.
+> There is an alternative of getting the secrets from a maintainer.  
+> Reach out to [Erelix](https://github.com/Erelix) if you want the environment variables used during development.
 
 ## Users list
 
@@ -40,16 +47,6 @@ You need: Docker Desktop, VS Code, and the **Dev Containers** extension inside o
 | Auth server | http://localhost:3000   | `auth-server/`       |
 | PostgreSQL  | localhost:5433          | `docker-compose.yml` |
 
----
-
-## Google Auth
-> [!warning]
-> !!! Disclaimer: you need a `.env` FOR GOOGLE AUTH !!!
->
-> A `.env` file at the project root, following the committed `.env.example` pattern, is required.
-> It holds the secrets the auth server uses (Google OAuth 2.0 client id/secret, session secret).
-> 
-> Without it, local login (demo users) still work, but the auth server and Google sign-in will not. You need to get the secrets from one of our team members for it (or you can reverse engineer it yourself with your own secrets with minimal effort.)
 
 
 ---
@@ -66,6 +63,8 @@ You need: Docker Desktop, VS Code, and the **Dev Containers** extension inside o
 
 
 **Run properly**:
+- make a `.env` file based off `.env.example` (GOOGLE_CLIENT_SECRET, GOOGLE_CLIENT_ID, SESSION_SECRET are only for Google OAuth, can leave them unfilled for local guest work)
+
 Run the following either in seperate terminals (3 in total: backend+postgre, auth, frontend) or batch as one command and run:
 ```bash
 docker compose up -d postgres
@@ -89,6 +88,7 @@ docker compose down; pkill -f spring-boot:run; pkill -f vite; pkill -f authServe
 ---
 
 ## Launch with Nix (SUPER AWESOME PERSON)
+- make a `.env` file based off `.env.example` (GOOGLE_CLIENT_SECRET, GOOGLE_CLIENT_ID, SESSION_SECRET are only for Google OAuth, can leave them unfilled for local guest work)
 
 If you have [Nix: the package manager](https://nixos.org/download/), a `shell.nix` ships two commands: `fresh` (clean build then launch) and
 `start` (just launch). They bring up Postgres, backend, auth server and frontend together.
