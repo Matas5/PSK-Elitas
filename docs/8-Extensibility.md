@@ -9,7 +9,7 @@ The risk-list ranking algorithm is swappable: two variants picked by config, hot
 
 ## The interface
 
-**File:** [backend/src/main/java/com/riskmonitor/service/ranking/RiskSortStrategy.java](backend/src/main/java/com/riskmonitor/service/ranking/RiskSortStrategy.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/ranking/RiskSortStrategy.java](../backend/src/main/java/com/riskmonitor/service/ranking/RiskSortStrategy.java)
 **Lines:** 10-13
 
 Every variant implements this; callers only see the interface.
@@ -22,7 +22,7 @@ public interface RiskSortStrategy {
 
 ## Variant 1: HIGH-reading count (default)
 
-**File:** [backend/src/main/java/com/riskmonitor/service/ranking/HighRiskCountSortStrategy.java](backend/src/main/java/com/riskmonitor/service/ranking/HighRiskCountSortStrategy.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/ranking/HighRiskCountSortStrategy.java](../backend/src/main/java/com/riskmonitor/service/ranking/HighRiskCountSortStrategy.java)
 **Lines:** 16-18, 29-38
 
 ```java
@@ -40,7 +40,7 @@ public class HighRiskCountSortStrategy implements RiskSortStrategy {
 
 ## Variant 2: average severity
 
-**File:** [backend/src/main/java/com/riskmonitor/service/ranking/AverageSeveritySortStrategy.java](backend/src/main/java/com/riskmonitor/service/ranking/AverageSeveritySortStrategy.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/ranking/AverageSeveritySortStrategy.java](../backend/src/main/java/com/riskmonitor/service/ranking/AverageSeveritySortStrategy.java)
 **Lines:** 16-18, 29-38
 
 Same shape, ranks on mean severity. The whole second algorithm is just one more `@Component`.
@@ -60,7 +60,7 @@ public class AverageSeveritySortStrategy implements RiskSortStrategy {
 
 ## Picking which one runs
 
-**File:** [backend/src/main/java/com/riskmonitor/service/ranking/RiskSortStrategySelector.java](backend/src/main/java/com/riskmonitor/service/ranking/RiskSortStrategySelector.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/ranking/RiskSortStrategySelector.java](../backend/src/main/java/com/riskmonitor/service/ranking/RiskSortStrategySelector.java)
 **Lines:** 15-51
 
 Spring injects every strategy into a `Map` by bean name; the active one comes from config (`application.properties:26`). A new strategy joins the map on its own, so this class never changes.
@@ -83,7 +83,7 @@ public class RiskSortStrategySelector {
 
 ## Who calls it
 
-**File:** [backend/src/main/java/com/riskmonitor/service/RiskService.java](backend/src/main/java/com/riskmonitor/service/RiskService.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/RiskService.java](../backend/src/main/java/com/riskmonitor/service/RiskService.java)
 **Lines:** 50-54
 
 The service asks the selector for the active strategy and calls `rank()`, never knowing which one runs.
@@ -98,7 +98,7 @@ List<RiskResp> result = sortStrategySelector.current()
 
 ## Live switch (extra)
 
-**File:** [backend/src/main/java/com/riskmonitor/controller/RiskSortStrategyController.java](backend/src/main/java/com/riskmonitor/controller/RiskSortStrategyController.java)
+**File:** [backend/src/main/java/com/riskmonitor/controller/RiskSortStrategyController.java](../backend/src/main/java/com/riskmonitor/controller/RiskSortStrategyController.java)
 **Lines:** 31-36
 
 A PUT flips the active strategy at runtime, no restart; the Risks page wires this to a toggle.

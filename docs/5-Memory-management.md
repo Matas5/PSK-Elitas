@@ -10,7 +10,7 @@ No session-scoped state for the use case; reads are paged so full history is nev
 
 ## Stateless singleton services
 
-**File:** [backend/src/main/java/com/riskmonitor/service/RiskValueService.java](backend/src/main/java/com/riskmonitor/service/RiskValueService.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/RiskValueService.java](../backend/src/main/java/com/riskmonitor/service/RiskValueService.java)
 **Lines:** 25-31
 
 Singletons whose only fields are injected collaborators. Per-request data (`userId`, DTOs, `Pageable`) arrives as method params and is GC'd when the request ends. `RiskService.java:25` is the same.
@@ -27,7 +27,7 @@ public class RiskValueService {
 
 ## No session-scoped components
 
-**File:** [backend/src/main/java/com/riskmonitor/web/CurrentUserIdArgumentResolver.java](backend/src/main/java/com/riskmonitor/web/CurrentUserIdArgumentResolver.java)
+**File:** [backend/src/main/java/com/riskmonitor/web/CurrentUserIdArgumentResolver.java](../backend/src/main/java/com/riskmonitor/web/CurrentUserIdArgumentResolver.java)
 **Lines:** 29-33
 
 User id read from the header per call. No `@SessionScope`/`@SessionAttributes`/`HttpSession` anywhere.
@@ -42,14 +42,14 @@ return userId;
 
 ## Paged reads, clamped page size
 
-**File:** [backend/src/main/java/com/riskmonitor/repository/RiskValueRepository.java](backend/src/main/java/com/riskmonitor/repository/RiskValueRepository.java)
+**File:** [backend/src/main/java/com/riskmonitor/repository/RiskValueRepository.java](../backend/src/main/java/com/riskmonitor/repository/RiskValueRepository.java)
 **Lines:** 16
 
 ```java
 Page<RiskValue> findByRiskId(UUID riskId, Pageable pageable);
 ```
 
-**File:** [backend/src/main/java/com/riskmonitor/controller/RiskValueController.java](backend/src/main/java/com/riskmonitor/controller/RiskValueController.java)
+**File:** [backend/src/main/java/com/riskmonitor/controller/RiskValueController.java](../backend/src/main/java/com/riskmonitor/controller/RiskValueController.java)
 **Lines:** 89-102
 
 `size` is clamped to 1..100, so a client can't pull an arbitrarily large page.
@@ -63,7 +63,7 @@ return PageRequest.of(safePage, safeSize, Sort.by(direction, property));
 
 ## Frontend keeps one page in state
 
-**File:** [frontend/src/pages/RiskValues.jsx](frontend/src/pages/RiskValues.jsx)
+**File:** [frontend/src/pages/RiskValues.jsx](../frontend/src/pages/RiskValues.jsx)
 **Lines:** 296-321
 
 Stores only the current page (`data.content`) plus `totalElements` for the pager, not the whole history.

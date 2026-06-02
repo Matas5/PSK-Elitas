@@ -10,7 +10,7 @@ Concurrent edits to the same record are detected via JPA `@Version`; the user is
 
 ## Version field
 
-**File:** [backend/src/main/java/com/riskmonitor/entity/Risk.java](backend/src/main/java/com/riskmonitor/entity/Risk.java)
+**File:** [backend/src/main/java/com/riskmonitor/entity/Risk.java](../backend/src/main/java/com/riskmonitor/entity/Risk.java)
 **Lines:** 77-79
 
 Hibernate bumps `version` on every update; `RiskValue.java:49-51` has the same field.
@@ -23,7 +23,7 @@ private Long version;
 
 ## Conflict detection on save (Risk)
 
-**File:** [backend/src/main/java/com/riskmonitor/service/RiskService.java](backend/src/main/java/com/riskmonitor/service/RiskService.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/RiskService.java](../backend/src/main/java/com/riskmonitor/service/RiskService.java)
 **Lines:** 127-137
 
 The service compares the client's `version` to the DB version and throws on mismatch, carrying the current data.
@@ -39,7 +39,7 @@ if (!risk.getVersion().equals(req.version())) {
 
 ## Same check for risk values
 
-**File:** [backend/src/main/java/com/riskmonitor/service/RiskValueService.java](backend/src/main/java/com/riskmonitor/service/RiskValueService.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/RiskValueService.java](../backend/src/main/java/com/riskmonitor/service/RiskValueService.java)
 **Lines:** 70-76
 
 ```java
@@ -53,7 +53,7 @@ if (!riskValue.getVersion().equals(request.version())) {
 
 ## Mapped to HTTP 409
 
-**File:** [backend/src/main/java/com/riskmonitor/config/GlobalExceptionHandler.java](backend/src/main/java/com/riskmonitor/config/GlobalExceptionHandler.java)
+**File:** [backend/src/main/java/com/riskmonitor/config/GlobalExceptionHandler.java](../backend/src/main/java/com/riskmonitor/config/GlobalExceptionHandler.java)
 **Lines:** 26-40
 
 Returns 409 with the current server copy so the client can reload/overwrite. A second handler (`:44-53`) maps the flush-time JPA race to 409 too, not 500.
@@ -70,6 +70,6 @@ public ResponseEntity<ConflictResponse<?>> handleOptimisticLockingFailure(
 
 ## Frontend resolver
 
-**Files:** [frontend/src/components/ConflictDialog.jsx](frontend/src/components/ConflictDialog.jsx), [frontend/src/components/CreateRiskDialog.jsx](frontend/src/components/CreateRiskDialog.jsx)
+**Files:** [frontend/src/components/ConflictDialog.jsx](../frontend/src/components/ConflictDialog.jsx), [frontend/src/components/CreateRiskDialog.jsx](../frontend/src/components/CreateRiskDialog.jsx)
 
 On a 409 the editor shows `ConflictDialog` with Reload / Overwrite / Cancel. Risk value edits surface the same 409 as a reload prompt.

@@ -10,7 +10,7 @@ One account can be used in many tabs at once: no use-case data in session, ident
 
 ## Stateless controller
 
-**File:** [backend/src/main/java/com/riskmonitor/controller/RiskController.java](backend/src/main/java/com/riskmonitor/controller/RiskController.java)
+**File:** [backend/src/main/java/com/riskmonitor/controller/RiskController.java](../backend/src/main/java/com/riskmonitor/controller/RiskController.java)
 **Lines:** 39-42
 
 ```java
@@ -22,7 +22,7 @@ public RiskResp getRisk(@PathVariable UUID id, @CurrentUserId String userId) {
 
 ## Identity from the request, not a session
 
-**File:** [backend/src/main/java/com/riskmonitor/web/CurrentUserIdArgumentResolver.java](backend/src/main/java/com/riskmonitor/web/CurrentUserIdArgumentResolver.java)
+**File:** [backend/src/main/java/com/riskmonitor/web/CurrentUserIdArgumentResolver.java](../backend/src/main/java/com/riskmonitor/web/CurrentUserIdArgumentResolver.java)
 **Lines:** 29-33
 
 `@CurrentUserId` reads the `X-User-Id` header on every call. No `HttpSession`, no session-scoped bean.
@@ -37,7 +37,7 @@ return userId;
 
 ## Shared state lives in the DB
 
-**File:** [backend/src/main/java/com/riskmonitor/service/RiskService.java](backend/src/main/java/com/riskmonitor/service/RiskService.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/RiskService.java](../backend/src/main/java/com/riskmonitor/service/RiskService.java)
 **Lines:** 103-155
 
 Edits load the entity from the repo and save it back, so every tab reads and writes the same central state.

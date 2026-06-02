@@ -10,7 +10,7 @@ All data access is parameterized JPA derived queries, no string-built SQL anywhe
 
 ## Parameterized JPA queries
 
-**File:** [backend/src/main/java/com/riskmonitor/repository/RiskRepository.java](backend/src/main/java/com/riskmonitor/repository/RiskRepository.java)
+**File:** [backend/src/main/java/com/riskmonitor/repository/RiskRepository.java](../backend/src/main/java/com/riskmonitor/repository/RiskRepository.java)
 **Lines:** 12-17
 
 Method params are bound as query parameters by Hibernate/JDBC, never concatenated into SQL.
@@ -23,7 +23,7 @@ public interface RiskRepository extends JpaRepository<Risk, UUID> {
 }
 ```
 
-**File:** [backend/src/main/java/com/riskmonitor/repository/RiskValueRepository.java](backend/src/main/java/com/riskmonitor/repository/RiskValueRepository.java)
+**File:** [backend/src/main/java/com/riskmonitor/repository/RiskValueRepository.java](../backend/src/main/java/com/riskmonitor/repository/RiskValueRepository.java)
 **Lines:** 12-18
 
 ```java
