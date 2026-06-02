@@ -8,7 +8,7 @@ A long backend job doesn't freeze the browser. Main case: report generation retu
 
 ## Async enabled
 
-**File:** [backend/src/main/java/com/riskmonitor/BackendApplication.java](backend/src/main/java/com/riskmonitor/BackendApplication.java)
+**File:** [backend/src/main/java/com/riskmonitor/BackendApplication.java](../backend/src/main/java/com/riskmonitor/BackendApplication.java)
 **Lines:** 9-10, 12
 
 `@EnableAsync` runs `@Async` methods on a background `task-N` thread.
@@ -21,7 +21,7 @@ public class BackendApplication { ... }
 
 ## Request returns instantly
 
-**File:** [backend/src/main/java/com/riskmonitor/controller/ReportController.java](backend/src/main/java/com/riskmonitor/controller/ReportController.java)
+**File:** [backend/src/main/java/com/riskmonitor/controller/ReportController.java](../backend/src/main/java/com/riskmonitor/controller/ReportController.java)
 **Lines:** 40-46
 
 Saves a PENDING row, fires the background job, returns `202` right away.
@@ -38,7 +38,7 @@ public ResponseEntity<ReportResp> generateCsv(@RequestParam UUID teamId,
 
 ## Heavy work runs off-thread
 
-**File:** [backend/src/main/java/com/riskmonitor/service/ReportGenerator.java](backend/src/main/java/com/riskmonitor/service/ReportGenerator.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/ReportGenerator.java](../backend/src/main/java/com/riskmonitor/service/ReportGenerator.java)
 **Lines:** 44-63
 
 Runs after the response is sent; `simulateWork()` is a configurable delay, then the row flips to READY.
@@ -56,7 +56,7 @@ public void generateCsvAsync(UUID reportId, String strategyName) {
 
 ## Page stays alive
 
-**File:** [frontend/src/pages/Reports.jsx](frontend/src/pages/Reports.jsx)
+**File:** [frontend/src/pages/Reports.jsx](../frontend/src/pages/Reports.jsx)
 **Lines:** 69-75
 
 While a report is PENDING the page polls every 2s; nothing blocks, the chip flips when READY.
@@ -73,7 +73,7 @@ useEffect(() => {
 
 ## Lighter case: the risk list
 
-**File:** [backend/src/main/java/com/riskmonitor/controller/RiskController.java](backend/src/main/java/com/riskmonitor/controller/RiskController.java)
+**File:** [backend/src/main/java/com/riskmonitor/controller/RiskController.java](../backend/src/main/java/com/riskmonitor/controller/RiskController.java)
 **Lines:** 44-50
 
 Returns a `CompletableFuture`, freeing the Tomcat worker until it resolves.
@@ -90,7 +90,7 @@ public CompletableFuture<List<RiskResp>> listRisks(
 
 ## Configurable delay (so PENDING is visible)
 
-**File:** [backend/src/main/java/com/riskmonitor/service/ReportGenerator.java](backend/src/main/java/com/riskmonitor/service/ReportGenerator.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/ReportGenerator.java](../backend/src/main/java/com/riskmonitor/service/ReportGenerator.java)
 **Lines:** 34-35, 65-74
 
 `simulateWork()` holds the job in PENDING for `riskmonitor.reports.simulated-delay-ms` (default 4000, `application.properties:29`); set 0 to disable.
