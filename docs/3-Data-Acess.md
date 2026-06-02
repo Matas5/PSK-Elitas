@@ -9,7 +9,7 @@ JPA entities via Spring Data, and every transaction opens and closes inside one 
 
 ## JPA entities
 
-**File:** [backend/src/main/java/com/riskmonitor/entity/Risk.java](backend/src/main/java/com/riskmonitor/entity/Risk.java)
+**File:** [backend/src/main/java/com/riskmonitor/entity/Risk.java](../backend/src/main/java/com/riskmonitor/entity/Risk.java)
 **Lines:** 21-27, 77-79
 
 ```java
@@ -26,7 +26,7 @@ public class Risk {
 }
 ```
 
-**File:** [backend/src/main/java/com/riskmonitor/entity/RiskValue.java](backend/src/main/java/com/riskmonitor/entity/RiskValue.java)
+**File:** [backend/src/main/java/com/riskmonitor/entity/RiskValue.java](../backend/src/main/java/com/riskmonitor/entity/RiskValue.java)
 **Lines:** 29-38, 49-51
 
 `RiskValue` maps to `risk_value`, linked to `Risk` with `@ManyToOne`.
@@ -48,7 +48,7 @@ public class RiskValue {
 
 ## Short transactions in the service layer
 
-**File:** [backend/src/main/java/com/riskmonitor/service/RiskService.java](backend/src/main/java/com/riskmonitor/service/RiskService.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/RiskService.java](../backend/src/main/java/com/riskmonitor/service/RiskService.java)
 **Lines:** 35-41, 103-155
 
 `@Transactional` is on the service method, so the tx opens and closes within one request, never waiting on user input.
@@ -61,7 +61,7 @@ public Risk getRisk(UUID id, String userId) { ... }
 public Risk updateRisk(UUID id, RiskUpdateReq req, String userId) { ... }
 ```
 
-**File:** [backend/src/main/java/com/riskmonitor/service/RiskValueService.java](backend/src/main/java/com/riskmonitor/service/RiskValueService.java)
+**File:** [backend/src/main/java/com/riskmonitor/service/RiskValueService.java](../backend/src/main/java/com/riskmonitor/service/RiskValueService.java)
 **Lines:** 33-37, 68-80
 
 ```java
