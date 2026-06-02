@@ -9,7 +9,7 @@ Every business action is logged (user, authorities, time, class.method) with no 
 
 ## Logging aspect
 
-**File:** [backend/src/main/java/com/riskmonitor/audit/BusinessOperationLoggingAspect.java](backend/src/main/java/com/riskmonitor/audit/BusinessOperationLoggingAspect.java)
+**File:** [backend/src/main/java/com/riskmonitor/audit/BusinessOperationLoggingAspect.java](../backend/src/main/java/com/riskmonitor/audit/BusinessOperationLoggingAspect.java)
 **Lines:** 17-60
 
 An `@Around` aspect wraps every method in `com.riskmonitor.service..*` and logs before/after. Service code is untouched.
@@ -33,7 +33,7 @@ public class BusinessOperationLoggingAspect {
 
 ## AOP enabled
 
-**File:** [backend/src/main/java/com/riskmonitor/config/AopConfig.java](backend/src/main/java/com/riskmonitor/config/AopConfig.java)
+**File:** [backend/src/main/java/com/riskmonitor/config/AopConfig.java](../backend/src/main/java/com/riskmonitor/config/AopConfig.java)
 **Lines:** 6-8
 
 ```java
@@ -45,7 +45,7 @@ public class AopConfig {
 
 ## Real user in the log
 
-**File:** [backend/src/main/java/com/riskmonitor/web/CurrentUserAuthFilter.java](backend/src/main/java/com/riskmonitor/web/CurrentUserAuthFilter.java)
+**File:** [backend/src/main/java/com/riskmonitor/web/CurrentUserAuthFilter.java](../backend/src/main/java/com/riskmonitor/web/CurrentUserAuthFilter.java)
 **Lines:** 18-37
 
 A filter puts the per-request `X-User-Id` into `SecurityContextHolder` (authority `ROLE_USER`) before the controller, and clears it after so a pooled thread can't leak it.
@@ -72,7 +72,7 @@ public class CurrentUserAuthFilter extends OncePerRequestFilter {
 
 ## Toggle without touching business code
 
-**File:** [backend/src/main/resources/application.properties](backend/src/main/resources/application.properties)
+**File:** [backend/src/main/resources/application.properties](../backend/src/main/resources/application.properties)
 **Lines:** 20
 
 Setting this `false` disables the aspect (`@ConditionalOnProperty`), no service/controller change.
@@ -83,7 +83,7 @@ risk-monitor.audit.enabled=true
 
 ## File-based logging
 
-**File:** [backend/src/main/resources/logback-spring.xml](backend/src/main/resources/logback-spring.xml)
+**File:** [backend/src/main/resources/logback-spring.xml](../backend/src/main/resources/logback-spring.xml)
 **Lines:** 25-27
 
 The `BUSINESS_AUDIT` logger writes to `logs/business-operations.log` (rotated daily) and the console.
